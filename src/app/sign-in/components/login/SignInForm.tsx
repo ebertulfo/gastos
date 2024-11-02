@@ -13,6 +13,7 @@ import {
   signInWithPhone,
 } from "@/lib/firebase/auth";
 import {
+  ConfirmationResult,
   RecaptchaVerifier,
   getAuth,
   isSignInWithEmailLink,
@@ -28,7 +29,8 @@ const SignInForm: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [confirmationResult, setConfirmationResult] =
+    useState<ConfirmationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState<number | null>(null);
   const [emailSent, setEmailSent] = useState<boolean>(false);
@@ -103,6 +105,7 @@ const SignInForm: React.FC = () => {
           }
         })
         .catch((error) => {
+          console.error("Error completing sign-in:", error);
           toast({
             title: "Error",
             description: "Failed to complete sign-in.",
@@ -170,6 +173,7 @@ const SignInForm: React.FC = () => {
           }
         })
         .catch((error) => {
+          console.error("Error completing sign-in:", error);
           toast({
             title: "Error",
             description: "Failed to complete sign-in.",
@@ -210,6 +214,7 @@ const SignInForm: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error("Error sending sign-in link:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
@@ -235,7 +240,7 @@ const SignInForm: React.FC = () => {
         "recaptcha-container", // Target the reCAPTCHA container
         {
           size: "invisible", // Use an invisible reCAPTCHA
-          callback: (response: any) => {
+          callback: () => {
             // reCAPTCHA solved - proceed with sign-in
           },
         }
@@ -290,6 +295,7 @@ const SignInForm: React.FC = () => {
           router.push("/dashboard");
         }
       } catch (error) {
+        console.error("Error verifying code:", error);
         toast({
           title: "Error",
           description: "Invalid verification code.",

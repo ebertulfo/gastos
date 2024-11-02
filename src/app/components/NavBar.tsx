@@ -26,6 +26,7 @@ const Navbar: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error("Error signing out", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",

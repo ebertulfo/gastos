@@ -2,13 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   deleteExpense,
   getUserExpenses,
   updateExpense,
 } from "@/lib/firebase/expenses";
-import { Expense } from "@/types";
+import { allowedCategories, Expense, ExpenseCategory } from "@/schemas/expense";
+
 import { Loader2 } from "lucide-react"; // Import Loader2 from lucide-react for a simple loading spinner
 import React, { useEffect, useState } from "react";
 
@@ -17,10 +19,10 @@ const ExpenseList: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [editValues, setEditValues] = useState({
+  const [editValues, setEditValues] = useState<Expense>({
     description: "",
-    amount: "",
-    category: "",
+    amount: 0,
+    category: ExpenseCategory.Others,
     date: "",
   });
   const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
@@ -46,10 +48,10 @@ const ExpenseList: React.FC = () => {
   const handleEditClick = (expense: Expense) => {
     setEditingExpense(expense);
     setEditValues({
-      description: expense.description,
-      amount: expense.amount.toString(),
+      description: expense.description || "",
+      amount: expense.amount,
       category: expense.category,
-      date: expense.date,
+      date: expense.date || new Date().toISOString(),
     });
   };
 
@@ -58,12 +60,16 @@ const ExpenseList: React.FC = () => {
     setEditValues((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleCategoryChange = (value: ExpenseCategory) => {
+    setEditValues((prev) => ({ ...prev, category: value }));
+  };
+
   const handleEditSave = async () => {
     if (editingExpense) {
       try {
         await updateExpense(editingExpense.id!, {
           description: editValues.description,
-          amount: parseFloat(editValues.amount),
+          amount: editValues.amount,
           category: editValues.category,
           date: editValues.date,
         });
@@ -151,12 +157,19 @@ const ExpenseList: React.FC = () => {
                       />
                     </td>
                     <td className="p-4">
-                      <Input
-                        type="text"
+                      <Select
                         name="category"
                         value={editValues.category}
-                        onChange={handleEditChange}
-                      />
+                        onValueChange={handleCategoryChange}
+                      >
+                        <SelectContent>
+                          {allowedCategories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="p-4">
                       <Input
@@ -181,7 +194,9 @@ const ExpenseList: React.FC = () => {
                     <td className="p-4">${expense.amount.toFixed(2)}</td>
                     <td className="p-4">{expense.category}</td>
                     <td className="p-4">
-                      {new Date(expense.date).toLocaleDateString()}
+                      {expense.date
+                        ? new Date(expense.date).toLocaleDateString()
+                        : "-"}
                     </td>
                     <td className="p-4">
                       <Button
