@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   deleteExpense,
@@ -162,11 +162,13 @@ const ExpenseList: React.FC = () => {
                         value={editValues.category}
                         onValueChange={handleCategoryChange}
                       >
-                        {allowedCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
+                        <SelectContent>
+                          {allowedCategories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
                     </td>
                     <td className="p-4">

@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectItem } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext"; // Assuming you're using useAuth to get current user info
 import { addExpense } from "@/lib/firebase/expenses";
 import { Expense, ExpenseCategory } from "@/schemas/expense";
@@ -65,11 +65,13 @@ const AddExpenseForm: React.FC = () => {
         value={category}
         onValueChange={(value) => setCategory(value as ExpenseCategory)}
       >
-        {Object.values(ExpenseCategory).map((cat) => (
-          <SelectItem key={cat} value={cat}>
-            {cat}
-          </SelectItem>
-        ))}
+        <SelectContent>
+          {Object.values(ExpenseCategory).map((cat) => (
+            <SelectItem key={cat} value={cat}>
+              {cat}
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
       <Input
         type="date"
