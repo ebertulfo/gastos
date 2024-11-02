@@ -32,27 +32,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Load file from Telegram
-    const fileResponse = await fetch(
-      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
-    );
-    const fileInfo = await fileResponse.json();
-    // Step 1: Determine Intent (Log Expense vs. Query Expense)
-    console.log("@@@ FILE DATA", fileInfo);
-    const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${fileInfo.result.file_path}`;
-    console.log("@@@ FILE URL", fileUrl);
-
-    const fileData = await fetch(fileUrl);
-    const fileBuffer = Buffer.from(await fileData.arrayBuffer());
-    console.log("@@@ FILE DATA", fileData);
-    if (!fileData.ok) {
-      return NextResponse.json(
-        { reply: "Failed to fetch file from Telegram" },
-        { status: 400 }
-      );
-    }
 
     // If file is an image, automatically consider it as a log intent.
     let intent = "log";
+    let fileBuffer;
     if (!fileId) {
       const intentCompletion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -75,12 +58,31 @@ export async function POST(req: NextRequest) {
         );
       }
       intent = intentContent.trim().toLowerCase();
+    } else {
+      const fileResponse = await fetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
+      );
+      const fileInfo = await fileResponse.json();
+      // Step 1: Determine Intent (Log Expense vs. Query Expense)
+      console.log("@@@ FILE DATA", fileInfo);
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${fileInfo.result.file_path}`;
+      console.log("@@@ FILE URL", fileUrl);
+
+      const fileData = await fetch(fileUrl);
+      fileBuffer = Buffer.from(await fileData.arrayBuffer());
+      console.log("@@@ FILE DATA", fileData);
+      if (!fileData.ok) {
+        return NextResponse.json(
+          { reply: "Failed to fetch file from Telegram" },
+          { status: 400 }
+        );
+      }
     }
 
     // Step 2: Handle Expense Logging
     if (intent === "log") {
       let parsedContent = null;
-      if (fileId) {
+      if (fileId && fileBuffer) {
         parsedContent = await expenseParser.parseExpense(fileBuffer);
       } else {
         parsedContent = await expenseParser.parseExpense(message);

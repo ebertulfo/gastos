@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { ExpenseSchema, Expense } from "@/schemas/expense";
+import { ExpenseSchema, Expense, ExpenseCategory } from "@/schemas/expense";
+import { ExpenseService } from "@/services/expenses";
 
 async function authenticate(req: NextRequest): Promise<NextResponse | null> {
   const API_KEY = process.env.API_KEY; // Make sure to use your actual environment variable here
@@ -42,6 +43,7 @@ async function initializeFirestore() {
 }
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const firestore = await initializeFirestore();
+  const expenseService = new ExpenseService(firestore);
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const telegramUserId = searchParams.get("telegramUserId");
     const startDate = searchParams.get("start_date");
     const endDate = searchParams.get("end_date");
-    const category = searchParams.get("category");
+    const category = searchParams.get("category") || null;
     console.log("@@@ QUERY PARAMS", {
       telegramUserId,
       startDate,
@@ -73,36 +75,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const expensesRef = firestore.collection("expenses");
-    let query = expensesRef.where("userId", "==", firebaseUserId);
-
-    // Apply date filters if startDate and/or endDate are provided
-    if (startDate) {
-      const start = new Date(startDate);
-      const startString = start.toISOString(); // Convert to 'YYYY-MM-DD' format
-      console.log("@@@ START", startString);
-      query = query.where("date", ">=", startString);
-    }
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999); // Set end date to the end of the day
-      const endString = end.toISOString(); // Convert to 'YYYY-MM-DD' format
-      console.log("@@@ END", endString);
-      query = query.where("date", "<=", endString);
-    }
-
-    // Apply category filter if provided
-    if (category && category !== "All") {
-      query = query.where("category", "==", category);
-    }
-
-    console.log("@@@ PASOK");
-
-    const snapshot = await query.get();
-    const expenses = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const expenses = expenseService.get(
+      firebaseUserId,
+      startDate,
+      endDate,
+      category as ExpenseCategory
+    );
     console.log("@@@ EXPENSESssss", expenses);
 
     return NextResponse.json(expenses, { status: 200 });
@@ -119,6 +97,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const firestore = await initializeFirestore();
+  const expenseService = new ExpenseService(firestore);
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -165,8 +144,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       createdAt: new Date().toISOString(),
     };
     console.log("@@@ NEW EXPENSE", newExpense);
-    const expensesRef = firestore.collection("expenses");
-    const docRef = await expensesRef.add(newExpense);
+    expenseService.create(newExpense);
+    const docRef = await expenseService.create(newExpense);
     return NextResponse.json({ id: docRef.id, ...newExpense }, { status: 201 });
   } catch (error) {
     console.error("Error handling POST request:", error);
@@ -179,6 +158,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 export async function PUT(req: NextRequest): Promise<NextResponse> {
   const firestore = await initializeFirestore();
+  const expenseService = new ExpenseService(firestore);
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -198,9 +178,8 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const expensesRef = firestore.collection("expenses");
-    await expensesRef.doc(id).update(parseResult.data);
-    return NextResponse.json({ id, ...parseResult.data }, { status: 200 });
+    const expensesRef = await expenseService.update(id, parseResult.data);
+    return NextResponse.json(expensesRef, { status: 200 });
   } catch (error) {
     console.error("Error handling PUT request:", error);
     return NextResponse.json(
@@ -212,6 +191,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
 
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
   const firestore = await initializeFirestore();
+  const expenseService = new ExpenseService(firestore);
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -227,8 +207,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const expensesRef = firestore.collection("expenses");
-    await expensesRef.doc(id).delete();
+    await expenseService.delete(id);
     return NextResponse.json(
       { message: "Expense deleted successfully" },
       { status: 200 }
