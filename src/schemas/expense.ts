@@ -23,7 +23,6 @@ export const ExpenseSchema = z.object({
 // Define the OpenAI-specific schema by omitting fields
 export const OpenAIExpenseSchema = ExpenseSchema.omit({
   id: true,
-  date: true,
   telegramUserId: true,
 });
 

@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": process.env.API_KEY,
+          "x-api-key": process.env.API_KEY || "",
         },
         body: JSON.stringify(expenseData),
       });
@@ -167,13 +167,13 @@ export async function POST(req: NextRequest) {
       const apiResponse = await fetch(url, {
         method: "GET",
         headers: {
-          "x-api-key": process.env.API_KEY,
+          "x-api-key": process.env.API_KEY || "",
         },
       });
 
       const data = await apiResponse.json();
       const totalAmount = data.reduce(
-        (sum, expense) => sum + expense.amount,
+        (sum: number, expense: Expense) => sum + expense.amount,
         0
       );
       const reply = `Total spending from ${queryData.start_date} to ${

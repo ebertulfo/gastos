@@ -42,20 +42,17 @@ export async function getCurrentUser() {
 
     return currentUser;
   } catch (e) {
+    console.error(e);
     await firebaseAuth.signOut();
-    const res = await fetch(`${process.env.APP_URL}/api/auth/sign-out`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const data = await res.json();
   }
 }
 
 async function getSession() {
   try {
-    return cookies().get("__session")?.value;
+    const cookieValues = await cookies();
+    return cookieValues.get("__session")?.value;
   } catch (error) {
+    console.error("Error getting session", error);
     return undefined;
   }
 }
