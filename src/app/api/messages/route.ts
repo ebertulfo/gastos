@@ -6,6 +6,7 @@ import {
   OpenAIExpenseSchema,
   QueryExpenseSchema,
 } from "@/schemas/expense"; // Assuming QueryExpenseSchema for query structure
+import { OpenAIExpenseParser } from "@/services/OpenAIExpenseParser";
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -14,61 +15,78 @@ const openai = new OpenAI({
 
 export async function POST(req: NextRequest) {
   try {
-    const { telegramUserId, message } = await req.json();
+    const expenseParser = new OpenAIExpenseParser(openai);
+    const { telegramUserId, message, fileId } = await req.json();
 
-    if (!telegramUserId || !message) {
+    if (!telegramUserId) {
       return NextResponse.json(
-        { error: "Missing telegramUserId or message" },
+        { error: "Missing telegramUserId" },
         { status: 400 }
       );
     }
 
+    if (!message && !fileId) {
+      return NextResponse.json(
+        { error: "Missing message or fileId" },
+        { status: 400 }
+      );
+    }
+
+    // Load file from Telegram
+    const fileResponse = await fetch(
+      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
+    );
+    const fileInfo = await fileResponse.json();
     // Step 1: Determine Intent (Log Expense vs. Query Expense)
-    const intentCompletion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Determine if the user message is an 'expense logging' or an 'expense query'. Respond with 'log' for logging and 'query' for querying.",
-        },
-        { role: "user", content: message },
-      ],
-      max_tokens: 10,
-    });
+    console.log("@@@ FILE DATA", fileInfo);
+    const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${fileInfo.result.file_path}`;
+    console.log("@@@ FILE URL", fileUrl);
 
-    const intentContent = intentCompletion.choices[0]?.message?.content;
-    if (!intentContent) {
+    const fileData = await fetch(fileUrl);
+    const fileBuffer = Buffer.from(await fileData.arrayBuffer());
+    console.log("@@@ FILE DATA", fileData);
+    if (!fileData.ok) {
       return NextResponse.json(
-        { reply: "Failed to determine intent." },
+        { reply: "Failed to fetch file from Telegram" },
         { status: 400 }
       );
     }
-    const intent = intentContent.trim().toLowerCase();
 
-    // Step 2: Handle Expense Logging
-    if (intent === "log") {
-      const extractionCompletion = await openai.chat.completions.create({
+    // If file is an image, automatically consider it as a log intent.
+    let intent = "log";
+    if (!fileId) {
+      const intentCompletion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
             content:
-              "You assist in logging expenses. Extract the amount, category, date (optional), and description from the user input. If details are missing, respond asking for clarification.",
+              "Determine if the user message is an 'expense logging' or an 'expense query'. Respond with 'log' for logging and 'query' for querying.",
           },
           { role: "user", content: message },
         ],
-        temperature: 0,
-        max_tokens: 500,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-        response_format: zodResponseFormat(OpenAIExpenseSchema, "expense"),
+        max_tokens: 10,
       });
 
-      const parsedContent = JSON.parse(
-        extractionCompletion.choices[0]?.message?.content || "{}"
-      );
+      const intentContent = intentCompletion.choices[0]?.message?.content;
+      if (!intentContent) {
+        return NextResponse.json(
+          { reply: "Failed to determine intent." },
+          { status: 400 }
+        );
+      }
+      intent = intentContent.trim().toLowerCase();
+    }
+
+    // Step 2: Handle Expense Logging
+    if (intent === "log") {
+      let parsedContent = null;
+      if (fileId) {
+        parsedContent = await expenseParser.parseExpense(fileBuffer);
+      } else {
+        parsedContent = await expenseParser.parseExpense(message);
+      }
+
       console.log("@@@ PARSED CONTENT", parsedContent);
       const parsedExpense = OpenAIExpenseSchema.safeParse(parsedContent).data;
       console.log("Parsed Expense:", parsedExpense);
