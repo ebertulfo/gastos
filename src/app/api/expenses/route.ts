@@ -16,6 +16,7 @@ async function authenticate(req: NextRequest): Promise<NextResponse | null> {
 async function getFirebaseUserId(
   telegramUserId: string
 ): Promise<string | null> {
+  const firestore = await initializeFirestore();
   const userMappingsRef = firestore.collection("userMappings");
   const mappingSnapshot = await userMappingsRef
     .where("telegramUserId", "==", telegramUserId)
@@ -28,7 +29,7 @@ async function getFirebaseUserId(
 async function initializeFirestore() {
   // Initialize Firebase Admin if not already initialized
   if (!getApps().length) {
-    return initializeApp({
+    initializeApp({
       credential: cert({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
