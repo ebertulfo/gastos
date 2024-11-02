@@ -8,12 +8,11 @@ import {
 } from "@/schemas/expense"; // Assuming QueryExpenseSchema for query structure
 import { OpenAIExpenseParser } from "@/services/OpenAIExpenseParser";
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: NextRequest) {
+  // Initialize OpenAI
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
   try {
     const expenseParser = new OpenAIExpenseParser(openai);
     const { telegramUserId, message, fileId } = await req.json();

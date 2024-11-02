@@ -4,21 +4,8 @@ import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { ExpenseSchema, Expense } from "@/schemas/expense";
 
-// Initialize Firebase Admin if not already initialized
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-const firestore = getFirestore();
-const API_KEY = process.env.API_KEY; // Make sure to use your actual environment variable here
-
 async function authenticate(req: NextRequest): Promise<NextResponse | null> {
+  const API_KEY = process.env.API_KEY; // Make sure to use your actual environment variable here
   const apiKey = req.headers.get("x-api-key");
   if (apiKey !== API_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -38,8 +25,22 @@ async function getFirebaseUserId(
   }
   return mappingSnapshot.docs[0].data().firebaseUserId;
 }
+async function initializeFirestore() {
+  // Initialize Firebase Admin if not already initialized
+  if (!getApps().length) {
+    return initializeApp({
+      credential: cert({
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      }),
+    });
+  }
 
+  return getFirestore();
+}
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  const firestore = await initializeFirestore();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -116,6 +117,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const firestore = await initializeFirestore();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -175,6 +177,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function PUT(req: NextRequest): Promise<NextResponse> {
+  const firestore = await initializeFirestore();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -207,6 +210,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
+  const firestore = await initializeFirestore();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);

@@ -1,15 +1,19 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectItem } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext"; // Assuming you're using useAuth to get current user info
 import { addExpense } from "@/lib/firebase/expenses";
+import { Expense, ExpenseCategory } from "@/schemas/expense";
 import React, { useState } from "react";
 
 const AddExpenseForm: React.FC = () => {
   const { user } = useAuth(); // Get user to associate the expense
-  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState<ExpenseCategory>(
+    ExpenseCategory.Others
+  );
   const [date, setDate] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,8 +21,8 @@ const AddExpenseForm: React.FC = () => {
     e.preventDefault();
     if (!user) return;
 
-    const expense = {
-      title,
+    const expense: Expense = {
+      description,
       amount: parseFloat(amount),
       category,
       date,
@@ -29,9 +33,9 @@ const AddExpenseForm: React.FC = () => {
       setLoading(true);
       await addExpense(expense);
       // Reset form fields after successful add
-      setTitle("");
+      setDescription("");
       setAmount("");
-      setCategory("");
+      setCategory(ExpenseCategory.Others);
       setDate("");
       alert("Expense added successfully!");
     } catch (error) {
@@ -46,8 +50,8 @@ const AddExpenseForm: React.FC = () => {
       <Input
         type="text"
         placeholder="Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
         className="mb-4"
       />
       <Input
@@ -57,13 +61,16 @@ const AddExpenseForm: React.FC = () => {
         onChange={(e) => setAmount(e.target.value)}
         className="mb-4"
       />
-      <Input
-        type="text"
-        placeholder="Category"
+      <Select
         value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        className="mb-4"
-      />
+        onValueChange={(value) => setCategory(value as ExpenseCategory)}
+      >
+        {Object.values(ExpenseCategory).map((cat) => (
+          <SelectItem key={cat} value={cat}>
+            {cat}
+          </SelectItem>
+        ))}
+      </Select>
       <Input
         type="date"
         value={date}

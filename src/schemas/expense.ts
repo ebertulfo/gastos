@@ -1,5 +1,6 @@
 // src/schemas/expense.ts
 import { z } from "zod";
+
 // Define categories as an enum
 export enum ExpenseCategory {
   Food = "Food",
@@ -10,17 +11,25 @@ export enum ExpenseCategory {
 }
 
 // Define allowed categories array using enum values
-export const allowedCategories = Object.values(ExpenseCategory);
+export const allowedCategories = Object.values(ExpenseCategory) as [
+  ExpenseCategory,
+  ...ExpenseCategory[]
+];
 
-const OpenAiAllowedCategories = [...allowedCategories, "All"];
+const OpenAiAllowedCategories = ["All", ...allowedCategories] as [
+  string,
+  ...string[]
+];
+
 // Define the base ExpenseSchema
 export const ExpenseSchema = z.object({
   id: z.string().optional(),
   amount: z.number(),
-  category: z.enum(allowedCategories as [string, ...string[]]),
+  category: z.enum(allowedCategories),
   date: z.string().optional(),
   description: z.string().optional(),
   telegramUserId: z.string().optional(),
+  userId: z.string().optional(),
 });
 
 // Define the OpenAI-specific schema by omitting fields
@@ -32,6 +41,7 @@ export const OpenAIExpenseSchema = ExpenseSchema.omit({
 // Export the TypeScript types
 export type Expense = z.infer<typeof ExpenseSchema>;
 export type OpenAIExpense = z.infer<typeof OpenAIExpenseSchema>;
+
 // New schema for querying expenses
 export const QueryExpenseSchema = z.object({
   start_date: z.string().optional(),
