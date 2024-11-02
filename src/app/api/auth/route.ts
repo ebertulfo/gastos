@@ -15,7 +15,7 @@ if (!getApps().length) {
 
 const firestore = getFirestore();
 
-export async function handler(req: NextRequest) {
+async function handler(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     let reqBody;

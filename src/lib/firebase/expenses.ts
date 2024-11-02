@@ -9,7 +9,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "./firebase"; // Assuming your Firebase initialization is exported from this file
-import { Expense } from "@/types"; // Assuming you have defined the Expense type
+import { Expense } from "@/schemas/expense"; // Assuming you have defined the Expense type
 import { getAuth } from "firebase/auth";
 
 // Function to add a new expense
@@ -22,7 +22,9 @@ export const addExpense = async (expense: Expense) => {
     const docRef = await addDoc(collection(db, "expenses"), {
       ...expense,
       userId: user.uid, // Make sure to set the userId to the authenticated user's UID
-      date: new Date(expense.date).toISOString(), // Ensure date is saved in ISO format
+      date: expense.date
+        ? new Date(expense.date).toISOString()
+        : new Date().toISOString(), // Ensure date is saved in ISO format
     });
     return docRef.id;
   } catch (error) {

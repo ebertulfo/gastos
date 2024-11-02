@@ -1,20 +1,23 @@
 // src/schemas/expense.ts
 import { z } from "zod";
-// Define allowed categories
-const allowedCategories = [
-  "Food",
-  "Transportation",
-  "Utilities",
-  "Entertainment",
-  "Others",
-] as const;
+// Define categories as an enum
+export enum ExpenseCategory {
+  Food = "Food",
+  Transportation = "Transportation",
+  Utilities = "Utilities",
+  Entertainment = "Entertainment",
+  Others = "Others",
+}
 
-const OpenAiAllowedCategories = [...allowedCategories, "All"] as const;
+// Define allowed categories array using enum values
+export const allowedCategories = Object.values(ExpenseCategory);
+
+const OpenAiAllowedCategories = [...allowedCategories, "All"];
 // Define the base ExpenseSchema
 export const ExpenseSchema = z.object({
   id: z.string().optional(),
   amount: z.number(),
-  category: z.enum(allowedCategories),
+  category: z.enum(allowedCategories as [string, ...string[]]),
   date: z.string().optional(),
   description: z.string().optional(),
   telegramUserId: z.string().optional(),
