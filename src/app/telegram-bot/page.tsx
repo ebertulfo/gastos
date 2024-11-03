@@ -56,6 +56,16 @@ export default function TelegramBotPage() {
             </>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              <span>
+                Open your telegram and look for{" "}
+                <a
+                  href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_USERNAME}`}
+                  className="text-blue-500"
+                >
+                  @{process.env.NEXT_PUBLIC_BOT_USERNAME}
+                </a>
+                . Hit &quot;Start&quot; and copy the code sent to you.
+              </span>
               <Label htmlFor="code">
                 Enter the code sent to you on Telegram:
               </Label>

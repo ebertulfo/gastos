@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
     <nav className="flex justify-between items-center p-4 shadow-md bg-white">
       <div className="text-lg font-bold">Expense Tracker</div>
       {user ? (
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 text-xs">
           <Link href="/expenses">Expenses</Link>
           <Link href="/telegram-bot">Telegram Bot</Link>
           <Button onClick={handleSignOut} variant="outline">

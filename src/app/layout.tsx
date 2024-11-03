@@ -34,7 +34,9 @@ export default function RootLayout({
           {" "}
           {/* Wrap the entire app with AuthProvider */}
           <Navbar />
-          {children}
+          <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-[auto]">
+            {children}
+          </main>
         </AuthProvider>
       </body>
     </html>
