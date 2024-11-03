@@ -278,7 +278,7 @@ async function handleGeneralMessage(
     const expenseData: Expense = {
       ...parsedExpense,
       userId: firebaseUserId,
-      date: parsedExpense.date ? new Date(parsedExpense.date) : new Date(),
+      date: new Date(),
     };
 
     try {

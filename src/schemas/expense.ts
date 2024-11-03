@@ -37,8 +37,7 @@ export const ExpenseSchema = z.object({
 export const OpenAIExpenseSchema = ExpenseSchema.omit({
   id: true,
   telegramUserId: true,
-}).extend({
-  date: z.string().optional(),
+  date: true,
 });
 
 // Export the TypeScript types

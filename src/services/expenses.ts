@@ -58,7 +58,9 @@ export class ExpenseService implements IExpenseService {
       query = query.where("date", ">=", start);
     }
     if (endDate) {
-      const end = Timestamp.fromDate(new Date(endDate));
+      const end = Timestamp.fromDate(
+        new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      );
       query = query.where("date", "<=", end);
     }
 

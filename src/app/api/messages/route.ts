@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       const expenseData: Expense = {
         ...parsedExpense,
         telegramUserId: String(telegramUserId),
-        date: parsedExpense?.date ? new Date(parsedExpense.date) : new Date(),
+        date: new Date(),
       };
 
       const apiResponse = await fetch(`${process.env.APP_URL}/api/expenses`, {
