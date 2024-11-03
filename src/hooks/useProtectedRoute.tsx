@@ -14,6 +14,8 @@ const useProtectedRoute = () => {
       router.push("/sign-in");
     }
   }, [user, loading, router]);
+
+  return { user, loading };
 };
 
 export default useProtectedRoute;

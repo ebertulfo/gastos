@@ -70,24 +70,24 @@ export async function POST(req: NextRequest) {
 
 // Helper functions for each command
 async function sendWelcomeMessage(chatId: number, telegramUserId: number) {
-  const token = uuidv4(); // Generate a unique token
+  const oneTimeCode = uuidv4().slice(0, 6); // Generate a 6-character code
 
-  // Save the token to Firestore
+  // Save the code to Firestore with an expiration time
   const firestore = await initializeFirestore();
-  const tokenDoc = firestore.collection("authTokens").doc(token);
-  await tokenDoc.set({
-    telegramUserId,
-    createdAt: new Date(),
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000), // Token valid for 15 mins
-  });
+  await firestore
+    .collection("authCodes")
+    .doc(oneTimeCode)
+    .set({
+      telegramUserId,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // Code valid for 15 minutes
+    });
 
-  // Generate a link with the token
-  const link = `${process.env.APP_URL}/api/auth?token=${token}`;
-
+  // Send instructions to the user
   await sendMessage(
     chatId,
-    `Welcome\\! Please click [here](${link}) to link your Telegram account with your Expense Tracker account\\.`,
-    "MarkdownV2"
+    `Welcome! To link your account, please enter the following code in the Gastos Web App:\n\n*${oneTimeCode}*\n\nVisit: ${process.env.APP_URL}/telegram-bot`,
+    "Markdown"
   );
 }
 

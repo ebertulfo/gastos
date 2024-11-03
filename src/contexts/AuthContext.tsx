@@ -1,14 +1,25 @@
 "use client";
 
-import { auth } from "@/lib/firebase/firebase"; // Adjust based on your firebase file location
+import { auth } from "@/lib/firebase/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
+import {
+  collection,
+  getDocs,
+  getFirestore,
+  query,
+  where,
+} from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+interface ExtendedUser extends User {
+  telegramLinked?: boolean;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: ExtendedUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  updateLoggedInUser: (user: User | null) => void;
+  updateLoggedInUser: (user: ExtendedUser | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,17 +27,41 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("@@@ AUTH CONTEXT", user);
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const firestore = getFirestore();
+        const userMappingsRef = collection(firestore, "userMappings");
+
+        // Query to find the document with the matching firebaseUserId
+        const q = query(
+          userMappingsRef,
+          where("firebaseUserId", "==", firebaseUser.uid)
+        );
+        const querySnapshot = await getDocs(q);
+
+        let telegramLinked = false;
+
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          telegramLinked = userDoc.data().telegramLinked === true;
+        }
+
+        const extendedUser: ExtendedUser = {
+          ...firebaseUser,
+          telegramLinked,
+        };
+
+        setUser(extendedUser);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
@@ -35,8 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
   };
 
-  const updateLoggedInUser = (user: User | null) => {
-    setUser(user);
+  const updateLoggedInUser = (updatedUser: User | ExtendedUser | null) => {
+    setUser(updatedUser);
   };
 
   return (
