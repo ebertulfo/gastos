@@ -55,11 +55,7 @@ export async function GET(req: NextRequest) {
   await firestore.collection("authTokens").doc(token).delete();
   console.log(
     "@@@ REDIRECT!",
-    new URL("/linked-successfully", process.env.APP_URL)
+    new URL("/linked-successfully", process.env.NEXT_PUBLIC_APP_URL)
   );
   return redirect(`/linked-successfully`); // Redirect to a success page or message
-
-  // return NextResponse.redirect(
-  //   new URL("/linked-successfully", process.env.APP_URL)
-  // ); // Redirect to a success page or message
 }

@@ -107,14 +107,17 @@ export async function POST(req: NextRequest) {
         date: new Date(),
       };
 
-      const apiResponse = await fetch(`${process.env.APP_URL}/api/expenses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.API_KEY || "",
-        },
-        body: JSON.stringify(expenseData),
-      });
+      const apiResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/expenses`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.API_KEY || "",
+          },
+          body: JSON.stringify(expenseData),
+        }
+      );
 
       const userReply = apiResponse.ok
         ? `Logged your spending of $${expenseData.amount} on ${
@@ -157,7 +160,7 @@ export async function POST(req: NextRequest) {
         end_date: parsedQuery?.end_date || new Date().toISOString(),
       };
 
-      const url = new URL(`${process.env.APP_URL}/api/expenses`);
+      const url = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/api/expenses`);
       url.searchParams.append("telegramUserId", telegramUserId);
       url.searchParams.append("start_date", queryData.start_date);
       url.searchParams.append("end_date", queryData.end_date);

@@ -95,7 +95,7 @@ async function sendWelcomeMessage(chatId: number, telegramUserId: number) {
   // Send instructions to the user
   await sendMessage(
     chatId,
-    `Welcome! To link your account, please enter the following code in the Gastos Web App:\n\n*${oneTimeCode}*\n\nVisit: ${process.env.APP_URL}/telegram-bot`,
+    `Welcome! To link your account, please enter the following code in the Gastos Web App:\n\n*${oneTimeCode}*\n\nVisit: ${process.env.NEXT_PUBLIC_APP_URL}/telegram-bot`,
     "Markdown"
   );
 }

@@ -43,7 +43,7 @@ export async function sendSignInLink(email: string) {
 
   const actionCodeSettings = {
     // URL to redirect back to. Can be your app's home page or a specific path.
-    url: "http://localhost:3000/dashboard",
+    url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
     handleCodeInApp: true,
   };
 
