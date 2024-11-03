@@ -12,6 +12,7 @@ import { OpenAIExpenseParser } from "@/services/OpenAIExpenseParser";
 import { ExpenseService } from "@/services/expenses";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { v4 as uuidv4 } from "uuid"; // for generating unique tokens
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const API_BASE_URL = process.env.API_BASE_URL!;
@@ -69,11 +70,24 @@ export async function POST(req: NextRequest) {
 
 // Helper functions for each command
 async function sendWelcomeMessage(chatId: number, telegramUserId: number) {
-  const link = `${API_BASE_URL}/api/auth?telegramUserId=${telegramUserId}`;
+  const token = uuidv4(); // Generate a unique token
+
+  // Save the token to Firestore
+  const firestore = await initializeFirestore();
+  const tokenDoc = firestore.collection("authTokens").doc(token);
+  await tokenDoc.set({
+    telegramUserId,
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000), // Token valid for 15 mins
+  });
+
+  // Generate a link with the token
+  const link = `${process.env.APP_URL}/api/auth?token=${token}`;
+
   await sendMessage(
     chatId,
-    `Welcome! Link your account [here](${link})`,
-    "Markdown"
+    `Welcome\\! Please click [here](${link}) to link your Telegram account with your Expense Tracker account\\.`,
+    "MarkdownV2"
   );
 }
 
@@ -338,14 +352,21 @@ async function sendMessage(
   text: string,
   parseMode: string = "HTML"
 ) {
-  await axios.post(
-    `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-    {
-      chat_id: chatId,
-      text,
-      parse_mode: parseMode,
-    }
-  );
+  console.log("Sending message to chat ID:", chatId);
+  console.log("Message:", text);
+  console.log("Parse mode:", parseMode);
+  try {
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        chat_id: chatId,
+        text,
+        parse_mode: parseMode,
+      }
+    );
+  } catch (error: unknown) {
+    console.error("Error sending message:", error);
+  }
 }
 
 async function getFirebaseUserId(
