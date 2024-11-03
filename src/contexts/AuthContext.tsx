@@ -1,7 +1,13 @@
 "use client";
 
 import { auth } from "@/lib/firebase/firebase";
-import { onAuthStateChanged, User } from "firebase/auth";
+import {
+  getAuth,
+  isSignInWithEmailLink,
+  onAuthStateChanged,
+  signInWithEmailLink,
+  User,
+} from "firebase/auth";
 import {
   collection,
   getDocs,
@@ -9,6 +15,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface ExtendedUser extends User {
@@ -27,9 +34,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const router = useRouter();
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
-
+  useEffect(() => {
+    const auth = getAuth();
+    // Check if it's a sign-in link and handle it
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      const email = window.localStorage.getItem("emailForSignIn");
+      if (email) {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then((result) => {
+            console.log("Sign-in successful:", result.user);
+            window.localStorage.removeItem("emailForSignIn");
+            // Redirect or perform additional actions if needed
+          })
+          .catch((error) => {
+            console.error("Error completing sign-in:", error);
+            router.push("/sign-in"); // Redirect to sign-in page on error
+          });
+      } else {
+        console.error("Email not found in local storage");
+        router.push("/sign-in"); // Redirect if email is missing
+      }
+    }
+  }, [router]);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {

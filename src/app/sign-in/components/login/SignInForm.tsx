@@ -7,23 +7,14 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import {
-  completeSignInWithEmailLink,
-  sendSignInLink,
-  signInWithPhone,
-} from "@/lib/firebase/auth";
-import {
-  ConfirmationResult,
-  RecaptchaVerifier,
-  getAuth,
-  isSignInWithEmailLink,
-} from "firebase/auth";
+import { sendSignInLink, signInWithPhone } from "@/lib/firebase/auth";
+import { ConfirmationResult, RecaptchaVerifier, getAuth } from "firebase/auth";
 
 const SignInForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"email" | "emailLink" | "phone">(
     "emailLink"
   );
-  const { user, updateLoggedInUser } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -37,150 +28,10 @@ const SignInForm: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const telegramUserId = urlParams.get("telegramUserId");
-
-      if (telegramUserId) {
-        // Link Telegram user ID if already logged in
-        linkTelegramAccount(user.uid, telegramUserId);
-      } else {
-        // Redirect logged-in users to the dashboard
-        router.push("/dashboard");
-      }
+      // Redirect logged-in users to the dashboard
+      router.push("/dashboard");
     }
   }, [user, router]);
-
-  const linkTelegramAccount = async (
-    firebaseUserId: string,
-    telegramUserId: string
-  ) => {
-    try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firebaseUserId,
-          telegramUserId,
-        }),
-      });
-      console.log("@@@@ response", response);
-      if (response.ok) {
-        alert("pasok");
-        toast({
-          title: "Linked Successfully",
-          description: "Your Telegram account has been linked successfully.",
-        });
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to link Telegram account:", errorData.error);
-        toast({
-          title: "Linking Failed",
-          description:
-            "Could not link your Telegram account. Please try again.",
-        });
-      }
-    } catch (error) {
-      console.error("Error linking Telegram account:", error);
-      toast({
-        title: "Linking Error",
-        description: "An error occurred while linking your Telegram account.",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const auth = getAuth();
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      completeSignInWithEmailLink(window.location.href)
-        .then((user) => {
-          if (user) {
-            updateLoggedInUser(user); // Update the context with the signed-in user
-            toast({
-              title: "Sign-in Successful",
-              description: "You are now signed in.",
-            });
-            router.push("/dashboard");
-          }
-        })
-        .catch((error) => {
-          console.error("Error completing sign-in:", error);
-          toast({
-            title: "Error",
-            description: "Failed to complete sign-in.",
-          });
-        });
-    }
-  }, []);
-
-  useEffect(() => {
-    const auth = getAuth();
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      completeSignInWithEmailLink(window.location.href)
-        .then(async (user) => {
-          if (user) {
-            updateLoggedInUser(user); // Update the context with the signed-in user
-
-            // Send a POST request to link the Telegram user ID
-            const telegramUserId = new URLSearchParams(
-              window.location.search
-            ).get("telegramUserId");
-            if (telegramUserId) {
-              try {
-                const response = await fetch("/api/auth", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    idToken: await user.getIdToken(),
-                    firebaseUserId: user.uid,
-                    telegramUserId,
-                  }),
-                });
-
-                if (response.ok) {
-                  toast({
-                    title: "Sign-in Successful",
-                    description:
-                      "You are now signed in and linked to Telegram.",
-                  });
-                } else {
-                  const errorData = await response.json();
-                  console.error("Failed to link Telegram:", errorData.error);
-                  toast({
-                    title: "Warning",
-                    description: "Signed in, but failed to link with Telegram.",
-                  });
-                }
-              } catch (error) {
-                console.error("Error linking Telegram ID:", error);
-                toast({
-                  title: "Warning",
-                  description:
-                    "Signed in, but an error occurred linking with Telegram.",
-                });
-              }
-            } else {
-              toast({
-                title: "Sign-in Successful",
-                description: "You are now signed in.",
-              });
-            }
-
-            router.push("/dashboard");
-          }
-        })
-        .catch((error) => {
-          console.error("Error completing sign-in:", error);
-          toast({
-            title: "Error",
-            description: "Failed to complete sign-in.",
-          });
-        });
-    }
-  }, [router, updateLoggedInUser, toast]);
 
   useEffect(() => {
     if (resendCooldown && resendCooldown > 0) {
