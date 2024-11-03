@@ -25,7 +25,7 @@ const AddExpenseForm: React.FC = () => {
       description,
       amount: parseFloat(amount),
       category,
-      date,
+      date: new Date(date),
       userId: user.uid,
     };
 

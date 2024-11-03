@@ -109,7 +109,13 @@ async function handleAddExpense(
   try {
     await axios.post(
       `${API_BASE_URL}/api/expenses`,
-      { telegramUserId, title, amount: parseFloat(amount), category, date },
+      {
+        telegramUserId,
+        title,
+        amount: parseFloat(amount),
+        category,
+        date: date.toString(),
+      },
       { headers: { "x-api-key": API_KEY } }
     );
     await sendMessage(chatId, `Expense "${title}" added successfully!`);
@@ -252,9 +258,7 @@ async function handleGeneralMessage(
     const expenseData: Expense = {
       ...parsedExpense,
       telegramUserId: String(telegramUserId),
-      date: parsedExpense.date
-        ? new Date(parsedExpense.date).toISOString()
-        : new Date().toISOString(),
+      date: parsedExpense.date ? new Date(parsedExpense.date) : new Date(),
     };
     try {
       const newExpense = await expenseService.create(expenseData);
@@ -311,10 +315,12 @@ async function handleGeneralMessage(
     }
 
     const firebaseUserId = await getFirebaseUserId(telegramUserId.toString());
+    console.log("@@@ FIREBASE USER ID", firebaseUserId);
     if (!firebaseUserId) {
-      return NextResponse.json(
-        { error: "No mapping found for Telegram user ID" },
-        { status: 404 }
+      console.log("@@@ NO MAPPING FOUND");
+      return await sendMessage(
+        chatId,
+        "You don't seem to be linked to an account yet. Please use the /start command to link your account."
       );
     }
 
@@ -324,6 +330,7 @@ async function handleGeneralMessage(
       endDate,
       category as ExpenseCategory
     );
+    console.log("@@@ EXPENSES", expenses);
     const totalAmount = expenses.reduce(
       (sum: number, expense: Expense) => sum + expense.amount,
       0
@@ -373,8 +380,8 @@ async function getFirebaseUserId(
   telegramUserId: string
 ): Promise<string | null> {
   const firestore = await initializeFirestore();
-  const userMappingsRef = firestore.collection("userMappings");
-  const mappingSnapshot = await userMappingsRef
+  const userProfilesRef = firestore.collection("userProfiles");
+  const mappingSnapshot = await userProfilesRef
     .where("telegramUserId", "==", telegramUserId)
     .get();
   if (mappingSnapshot.empty) {

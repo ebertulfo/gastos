@@ -7,6 +7,7 @@ import {
   doc,
   query,
   where,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase"; // Assuming your Firebase initialization is exported from this file
 import { Expense } from "@/schemas/expense"; // Assuming you have defined the Expense type
@@ -22,9 +23,10 @@ export const addExpense = async (expense: Expense) => {
     const docRef = await addDoc(collection(db, "expenses"), {
       ...expense,
       userId: user.uid, // Make sure to set the userId to the authenticated user's UID
-      date: expense.date
-        ? new Date(expense.date).toISOString()
-        : new Date().toISOString(), // Ensure date is saved in ISO format
+      date: Timestamp.fromDate(
+        expense.date ? new Date(expense.date) : new Date()
+      ), // Ensure date is saved in ISO format
+      createdAt: Timestamp.now(),
     });
     return docRef.id;
   } catch (error) {
@@ -40,7 +42,13 @@ export const getUserExpenses = async (userId: string) => {
     const querySnapshot = await getDocs(q);
     const expenses: Expense[] = [];
     querySnapshot.forEach((doc) => {
-      expenses.push({ id: doc.id, ...doc.data() } as Expense);
+      const data = doc.data();
+      expenses.push({
+        id: doc.id,
+        ...data,
+        date: data.date.toDate(), // Convert Firestore Timestamp to JavaScript Date
+        createdAt: data.createdAt ? data.createdAt.toDate() : null, // Convert if exists
+      } as Expense);
     });
     return expenses;
   } catch (error) {

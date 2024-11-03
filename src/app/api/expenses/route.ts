@@ -18,8 +18,8 @@ async function getFirebaseUserId(
   telegramUserId: string
 ): Promise<string | null> {
   const firestore = await initializeFirestore();
-  const userMappingsRef = firestore.collection("userMappings");
-  const mappingSnapshot = await userMappingsRef
+  const userProfilesRef = firestore.collection("userProfiles");
+  const mappingSnapshot = await userProfilesRef
     .where("telegramUserId", "==", telegramUserId)
     .get();
   if (mappingSnapshot.empty) {

@@ -34,11 +34,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const firestore = getFirestore();
-        const userMappingsRef = collection(firestore, "userMappings");
+        const userProfilesRef = collection(firestore, "userProfiles");
 
         // Query to find the document with the matching firebaseUserId
         const q = query(
-          userMappingsRef,
+          userProfilesRef,
           where("firebaseUserId", "==", firebaseUser.uid)
         );
         const querySnapshot = await getDocs(q);

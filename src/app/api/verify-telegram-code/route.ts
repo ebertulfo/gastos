@@ -59,10 +59,14 @@ export async function POST(req: NextRequest) {
 
     // Link the Telegram user ID to the user’s account in Firestore
     await firestore
-      .collection("userMappings")
+      .collection("userProfiles")
       .doc()
       .set(
-        { firebaseUserId: userId, telegramUserId, telegramLinked: true },
+        {
+          firebaseUserId: userId,
+          telegramUserId: String(telegramUserId),
+          telegramLinked: true,
+        },
         { merge: true }
       );
 

@@ -23,7 +23,7 @@ const ExpenseList: React.FC = () => {
     description: "",
     amount: 0,
     category: ExpenseCategory.Others,
-    date: "",
+    date: undefined,
   });
   const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ const ExpenseList: React.FC = () => {
       description: expense.description || "",
       amount: expense.amount,
       category: expense.category,
-      date: expense.date || new Date().toISOString(),
+      date: expense.date || new Date(),
     });
   };
 
@@ -175,7 +175,7 @@ const ExpenseList: React.FC = () => {
                       <Input
                         type="date"
                         name="date"
-                        value={editValues.date}
+                        value={editValues.date?.toISOString()}
                         onChange={handleEditChange}
                       />
                     </td>

@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   // Link the Telegram user ID to the user’s account in Firestore
   // You’ll need to define where user data is stored and how to link them
   await firestore
-    .collection("userMappings")
+    .collection("userProfiles")
     .doc(telegramUserId.toString()) // Assuming `telegramUserId` maps directly; adjust as needed
     .set({ telegramLinked: true }, { merge: true });
 
