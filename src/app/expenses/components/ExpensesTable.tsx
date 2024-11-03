@@ -191,7 +191,7 @@ const ExpenseList: React.FC = () => {
                 ) : (
                   <>
                     <td className="p-4">{expense.description}</td>
-                    <td className="p-4">${expense.amount.toFixed(2)}</td>
+                    <td className="p-4">${expense.amount}</td>
                     <td className="p-4">{expense.category}</td>
                     <td className="p-4">
                       {expense.date

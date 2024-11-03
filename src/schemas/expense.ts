@@ -33,10 +33,12 @@ export const ExpenseSchema = z.object({
   createdAt: z.string().optional(),
 });
 
-// Define the OpenAI-specific schema by omitting fields
+// Define the OpenAI-specific schema by omitting fields and changing date to string
 export const OpenAIExpenseSchema = ExpenseSchema.omit({
   id: true,
   telegramUserId: true,
+}).extend({
+  date: z.string().optional(),
 });
 
 // Export the TypeScript types

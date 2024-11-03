@@ -45,27 +45,36 @@ export async function POST(req: NextRequest) {
   const chatId = update.message.chat.id;
   const telegramUserId = update.message.from.id;
   const text = update.message.text;
-
-  // Command handling
-  if (!update.message.photo) {
-    if (text.startsWith("/start")) {
-      await sendWelcomeMessage(chatId, telegramUserId);
-    } else if (text.startsWith("/addexpense")) {
-      await handleAddExpense(chatId, telegramUserId, text);
-    } else if (text.startsWith("/viewexpenses")) {
-      await handleViewExpenses(chatId, telegramUserId);
-    } else if (text.startsWith("/deleteexpense")) {
-      await handleDeleteExpense(chatId, telegramUserId, text);
+  try {
+    // Command handling
+    if (!update.message.photo) {
+      if (text.startsWith("/start")) {
+        await sendWelcomeMessage(chatId, telegramUserId);
+      } else if (text.startsWith("/addexpense")) {
+        await handleAddExpense(chatId, telegramUserId, text);
+      } else if (text.startsWith("/viewexpenses")) {
+        await handleViewExpenses(chatId, telegramUserId);
+      } else if (text.startsWith("/deleteexpense")) {
+        await handleDeleteExpense(chatId, telegramUserId, text);
+      } else {
+        // General message handling
+        await handleGeneralMessage(chatId, telegramUserId, update);
+      }
     } else {
       // General message handling
       await handleGeneralMessage(chatId, telegramUserId, update);
     }
-  } else {
-    // General message handling
-    await handleGeneralMessage(chatId, telegramUserId, update);
-  }
 
-  return NextResponse.json({ status: "Update handled" });
+    return NextResponse.json({ status: "Update handled" });
+  } catch (error) {
+    console.error("Error handling update:", error);
+    await sendMessage(
+      chatId,
+      "An error occurred while processing your request. Please try again later."
+    );
+
+    return NextResponse.json({ status: "Update handled" });
+  }
 }
 
 // Helper functions for each command
@@ -189,6 +198,7 @@ async function handleGeneralMessage(
   }
 
   if (!update.message.photo && update.message.text) {
+    await sendMessage(chatId, "On it. Gimme a sec...");
     const intentCompletion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -211,6 +221,7 @@ async function handleGeneralMessage(
     }
     intent = intentContent.trim().toLowerCase();
   } else if (update.message.photo) {
+    await sendMessage(chatId, "Processing image. Gimme a minute...");
     fileId = update.message.photo.slice(-1)[0].file_id;
     const fileResponse = await fetch(
       `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
@@ -254,12 +265,22 @@ async function handleGeneralMessage(
         "Could you provide more details about this expense, like the category or date?"
       );
     }
+    const firebaseUserId = await getFirebaseUserId(telegramUserId.toString());
+    console.log("@@@ FIREBASE USER ID", firebaseUserId);
+    if (!firebaseUserId) {
+      console.log("@@@ NO MAPPING FOUND");
+      return await sendMessage(
+        chatId,
+        "You don't seem to be linked to an account yet. Please use the /start command to link your account."
+      );
+    }
 
     const expenseData: Expense = {
       ...parsedExpense,
-      telegramUserId: String(telegramUserId),
+      userId: firebaseUserId,
       date: parsedExpense.date ? new Date(parsedExpense.date) : new Date(),
     };
+
     try {
       const newExpense = await expenseService.create(expenseData);
       return await sendMessage(
@@ -276,6 +297,7 @@ async function handleGeneralMessage(
 
   // Step 3: Handle Expense Querying
   if (intent === "query") {
+    await sendMessage(chatId, "Gimme a minute...");
     const queryCompletion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -332,7 +354,7 @@ async function handleGeneralMessage(
     );
     console.log("@@@ EXPENSES", expenses);
     const totalAmount = expenses.reduce(
-      (sum: number, expense: Expense) => sum + expense.amount,
+      (sum: number, expense: Expense) => sum + Number(expense.amount),
       0
     );
     const reply = `Total spending from ${parsedQuery.start_date} to ${
@@ -341,7 +363,7 @@ async function handleGeneralMessage(
       parsedQuery.category !== "all categories"
         ? `on ${parsedQuery.category}`
         : ""
-    } is $${totalAmount.toFixed(2)}.`;
+    } is $${totalAmount}.`;
 
     return await sendMessage(chatId, reply);
   }

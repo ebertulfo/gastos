@@ -1,12 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "@/lib/firebase/auth";
+import Link from "next/link"; // Import Link from next/link
 import { useRouter } from "next/navigation";
 import React from "react";
 
 const Navbar: React.FC = () => {
+  const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -37,9 +40,17 @@ const Navbar: React.FC = () => {
   return (
     <nav className="flex justify-between items-center p-4 shadow-md bg-white">
       <div className="text-lg font-bold">Expense Tracker</div>
-      <Button onClick={handleSignOut} variant="outline">
-        Sign Out
-      </Button>
+      {user ? (
+        <div className="flex items-center space-x-4">
+          <Link href="/expenses">Expenses</Link>
+          <Link href="/telegram-bot">Telegram Bot</Link>
+          <Button onClick={handleSignOut} variant="outline">
+            Sign Out
+          </Button>
+        </div>
+      ) : (
+        <Link href="/sign-in">Sign In</Link>
+      )}
     </nav>
   );
 };

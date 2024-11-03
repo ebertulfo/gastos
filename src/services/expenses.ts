@@ -42,6 +42,13 @@ export class ExpenseService implements IExpenseService {
     endDate: string | null,
     category: ExpenseCategory | "All"
   ): Promise<Expense[]> {
+    console.log(
+      "@@@ GET EXPENSES PARAMS",
+      userId,
+      startDate,
+      endDate,
+      category
+    );
     const expensesRef = this.firestore.collection("expenses");
     let query = expensesRef.where("userId", "==", userId);
 
