@@ -64,7 +64,14 @@ export const updateExpense = async (
 ) => {
   try {
     const expenseRef = doc(db, "expenses", expenseId);
-    await updateDoc(expenseRef, updatedExpense);
+    // Save dates as Firestore Timestamp
+    const parsedDate = updatedExpense.date
+      ? Timestamp.fromDate(new Date(updatedExpense.date))
+      : null;
+    await updateDoc(expenseRef, {
+      ...updatedExpense,
+      date: parsedDate,
+    });
     return true;
   } catch (error) {
     console.error("Error updating expense: ", error);

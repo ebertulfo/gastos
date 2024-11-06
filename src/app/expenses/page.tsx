@@ -7,10 +7,14 @@ export default function ExpensesPage() {
   useProtectedRoute();
   return (
     <main className="container">
-      <h1>Expenses</h1>
-      <AddExpenseForm />
+      <h1 className="text-xl mb-4">Expenses</h1>
+      <div className="mb-2">
+        <AddExpenseForm />
+      </div>
 
-      <ExpenseList />
+      <div className="mb-2">
+        <ExpenseList />
+      </div>
     </main>
   );
 }

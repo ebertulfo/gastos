@@ -3,6 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"; // Import ShadCN table components
 import { useAuth } from "@/contexts/AuthContext";
 import {
   deleteExpense,
@@ -10,8 +18,7 @@ import {
   updateExpense,
 } from "@/lib/firebase/expenses";
 import { allowedCategories, Expense, ExpenseCategory } from "@/schemas/expense";
-
-import { Loader2 } from "lucide-react"; // Import Loader2 from lucide-react for a simple loading spinner
+import { Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 const ExpenseList: React.FC = () => {
@@ -23,7 +30,7 @@ const ExpenseList: React.FC = () => {
     description: "",
     amount: 0,
     category: ExpenseCategory.Others,
-    date: undefined,
+    date: new Date(),
   });
   const [deletingExpense, setDeletingExpense] = useState<string | null>(null);
 
@@ -51,12 +58,13 @@ const ExpenseList: React.FC = () => {
       description: expense.description || "",
       amount: expense.amount,
       category: expense.category,
-      date: expense.date || new Date(),
+      date: expense.date ? new Date(expense.date) : new Date(),
     });
   };
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    console.log(name, value);
     setEditValues((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -118,45 +126,45 @@ const ExpenseList: React.FC = () => {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full bg-white shadow-md rounded-md">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="text-left p-4">Title</th>
-            <th className="text-left p-4">Amount</th>
-            <th className="text-left p-4">Category</th>
-            <th className="text-left p-4">Date</th>
-            <th className="text-left p-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="min-w-full bg-white shadow-md rounded-md">
+        <TableHeader>
+          <TableRow className="bg-gray-200">
+            <TableHead className="text-left p-4">Title</TableHead>
+            <TableHead className="text-left p-4">Amount</TableHead>
+            <TableHead className="text-left p-4">Category</TableHead>
+            <TableHead className="text-left p-4">Date</TableHead>
+            <TableHead className="text-left p-4">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {expenses.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="p-4 text-center text-gray-500">
+            <TableRow>
+              <TableCell colSpan={5} className="p-4 text-center text-gray-500">
                 No expenses found.
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ) : (
             expenses.map((expense) => (
-              <tr key={expense.id} className="border-b">
+              <TableRow key={expense.id} className="border-b">
                 {editingExpense?.id === expense.id ? (
                   <>
-                    <td className="p-4">
+                    <TableCell className="p-4">
                       <Input
                         type="text"
                         name="description"
                         value={editValues.description}
                         onChange={handleEditChange}
                       />
-                    </td>
-                    <td className="p-4">
+                    </TableCell>
+                    <TableCell className="p-4">
                       <Input
                         type="number"
                         name="amount"
                         value={editValues.amount}
                         onChange={handleEditChange}
                       />
-                    </td>
-                    <td className="p-4">
+                    </TableCell>
+                    <TableCell className="p-4">
                       <Select
                         name="category"
                         value={editValues.category}
@@ -170,35 +178,44 @@ const ExpenseList: React.FC = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                    </td>
-                    <td className="p-4">
+                    </TableCell>
+                    <TableCell className="p-4">
                       <Input
                         type="date"
                         name="date"
-                        value={editValues.date?.toISOString()}
+                        value={
+                          typeof editValues.date === "string"
+                            ? editValues.date
+                            : editValues.date?.toISOString().split("T")[0]
+                        }
                         onChange={handleEditChange}
                       />
-                    </td>
-                    <td className="p-4">
+                    </TableCell>
+
+                    <TableCell className="p-4">
                       <Button onClick={handleEditSave} className="mr-2">
                         Save
                       </Button>
                       <Button onClick={handleEditCancel} variant="outline">
                         Cancel
                       </Button>
-                    </td>
+                    </TableCell>
                   </>
                 ) : (
                   <>
-                    <td className="p-4">{expense.description}</td>
-                    <td className="p-4">${expense.amount}</td>
-                    <td className="p-4">{expense.category}</td>
-                    <td className="p-4">
+                    <TableCell className="p-4">{expense.description}</TableCell>
+                    <TableCell className="p-4">${expense.amount}</TableCell>
+                    <TableCell className="p-4">{expense.category}</TableCell>
+                    <TableCell className="p-4">
                       {expense.date
-                        ? new Date(expense.date).toLocaleDateString()
+                        ? new Date(expense.date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
                         : "-"}
-                    </td>
-                    <td className="p-4">
+                    </TableCell>
+                    <TableCell className="p-4">
                       <Button
                         onClick={() => handleEditClick(expense)}
                         variant="outline"
@@ -215,14 +232,14 @@ const ExpenseList: React.FC = () => {
                           ? "Deleting..."
                           : "Delete"}
                       </Button>
-                    </td>
+                    </TableCell>
                   </>
                 )}
-              </tr>
+              </TableRow>
             ))
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 };
