@@ -25,6 +25,7 @@ const OpenAiAllowedCategories = ["All", ...allowedCategories] as const;
 export const ExpenseSchema = z.object({
   id: z.string().optional(),
   amount: z.number(),
+  currency: z.string().optional(),
   category: z.enum(allowedCategories),
   date: z.date().optional(),
   description: z.string().optional(),

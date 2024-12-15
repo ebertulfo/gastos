@@ -18,10 +18,15 @@ import {
   updateExpense,
 } from "@/lib/firebase/expenses";
 import { allowedCategories, Expense, ExpenseCategory } from "@/schemas/expense";
+import { Period } from "@/types";
 import { Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
-const ExpenseList: React.FC = () => {
+interface ExpenseListProps {
+  period: Period;
+}
+
+const ExpenseList: React.FC<ExpenseListProps> = ({ period }) => {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,14 +41,15 @@ const ExpenseList: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      fetchExpenses(user.uid);
+      console.log("fetching expenses", period);
+      fetchExpenses(user.uid, period);
     }
-  }, [user]);
+  }, [user, period]);
 
-  const fetchExpenses = async (userId: string) => {
+  const fetchExpenses = async (userId: string, period: Period) => {
     try {
       setLoading(true);
-      const userExpenses = await getUserExpenses(userId);
+      const userExpenses = await getUserExpenses(userId, { period });
       setExpenses(userExpenses);
     } catch (error) {
       console.error("Error fetching expenses:", error);
@@ -82,7 +88,7 @@ const ExpenseList: React.FC = () => {
           date: editValues.date,
         });
         setEditingExpense(null);
-        fetchExpenses(user!.uid);
+        fetchExpenses(user!.uid, period);
       } catch (error) {
         console.error("Error updating expense:", error);
       }

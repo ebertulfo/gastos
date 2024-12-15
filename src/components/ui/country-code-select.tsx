@@ -40,7 +40,7 @@ const countryCodes = [
     code: "DZ",
   },
   {
-    label: "AmericanSamoa",
+    label: "American Samoa",
     value: "+1684",
     code: "AS",
   },
@@ -1233,9 +1233,11 @@ const countryCodes = [
 interface CountryCodeComboboxProps {
   value: string;
   onChange: (value: string) => void;
+  className?: string;
 }
 
 export function CountryCodeCombobox({
+  className,
   value,
   onChange,
 }: CountryCodeComboboxProps) {
@@ -1256,13 +1258,9 @@ export function CountryCodeCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className={cn("w-full justify-between", className)}
         >
-          {value
-            ? `${
-                countryCodes.find((country) => country.value === value)?.label
-              } (${value})`
-            : "Select country..."}
+          {value ? `${value}` : "Select country..."}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -1282,7 +1280,6 @@ export function CountryCodeCombobox({
                 {filteredCountries.map((country) => (
                   <CommandItem
                     key={`${country.code}-${country.value}`}
-                    // value={country.value}
                     onSelect={(currentValue) => {
                       console.log(currentValue);
                       onChange(currentValue === value ? "" : currentValue);

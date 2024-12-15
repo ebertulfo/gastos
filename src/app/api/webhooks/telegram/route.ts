@@ -308,7 +308,7 @@ async function handleGeneralMessage(
             .slice(
               0,
               10
-            )}. Extract the start_date and end_date for the query from the user's input. Only include a category if the user explicitly specifies one from Food, Transportation, Utilities, Entertainment, Clothing, or Others. **If the user does not mention a category, leave the field blank as "All"**`,
+            )}. Extract the start_date and end_date for the query from the user's input. Only include a category if the user explicitly specifies one from Food, Transportation, Utilities, Entertainment, Clothing, or Others. If you can derive the currency, return it back in ISO 4217 format, return null. **If the user does not mention a category, leave the field blank as "All"**`,
         },
         { role: "user", content: update.message.text || "" },
       ],

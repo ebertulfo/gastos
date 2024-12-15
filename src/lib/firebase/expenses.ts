@@ -12,6 +12,8 @@ import {
 import { db } from "./firebase"; // Assuming your Firebase initialization is exported from this file
 import { Expense } from "@/schemas/expense"; // Assuming you have defined the Expense type
 import { getAuth } from "firebase/auth";
+import { convertPeriodToDateRange } from "../helpers/filter";
+import { SearchFilters } from "@/types";
 
 // Function to add a new expense
 export const addExpense = async (expense: Expense) => {
@@ -36,9 +38,26 @@ export const addExpense = async (expense: Expense) => {
 };
 
 // Function to get all expenses for a user
-export const getUserExpenses = async (userId: string) => {
+export const getUserExpenses = async (
+  userId: string,
+  filters: SearchFilters
+) => {
+  console.log("@@@ GET");
   try {
-    const q = query(collection(db, "expenses"), where("userId", "==", userId));
+    let q = query(collection(db, "expenses"), where("userId", "==", userId));
+
+    // Apply additional filters if provided
+    if (filters.period) {
+      // Assuming filters.period is a string representing the period
+      // Convert the period to a date range
+      const dateRange = convertPeriodToDateRange(filters.period);
+      q = query(
+        collection(db, "expenses"),
+        where("userId", "==", userId),
+        where("date", ">=", dateRange.start),
+        where("date", "<=", dateRange.end)
+      );
+    }
     const querySnapshot = await getDocs(q);
     const expenses: Expense[] = [];
     querySnapshot.forEach((doc) => {

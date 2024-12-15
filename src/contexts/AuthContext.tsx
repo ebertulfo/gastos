@@ -1,25 +1,17 @@
 "use client";
 
-import { auth } from "@/lib/firebase/firebase";
-import {
-  getAuth,
-  isSignInWithEmailLink,
-  onAuthStateChanged,
-  signInWithEmailLink,
-  User,
-} from "firebase/auth";
-import {
-  collection,
-  getDocs,
-  getFirestore,
-  query,
-  where,
-} from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { SupabaseStore } from "@/dataStores/supabase";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-interface ExtendedUser extends User {
-  telegramLinked?: boolean;
+interface ExtendedUser {
+  id: string;
+  email: string | null;
+  telegram_id?: number | null;
+  onboarded: boolean;
 }
 
 interface AuthContextType {
@@ -35,71 +27,99 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const auth = getAuth();
-    // Check if it's a sign-in link and handle it
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      const email = window.localStorage.getItem("emailForSignIn");
-      if (email) {
-        signInWithEmailLink(auth, email, window.location.href)
-          .then((result) => {
-            console.log("Sign-in successful:", result.user);
-            window.localStorage.removeItem("emailForSignIn");
-            // Redirect or perform additional actions if needed
-          })
-          .catch((error) => {
-            console.error("Error completing sign-in:", error);
-            router.push("/sign-in"); // Redirect to sign-in page on error
-          });
-      } else {
-        console.error("Email not found in local storage");
-        router.push("/sign-in"); // Redirect if email is missing
+    const dataStore = new SupabaseStore();
+    const fetchUserProfile = async (userId: string) => {
+      try {
+        const userProfile = await dataStore.getProfile(userId);
+        return userProfile;
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return null;
       }
-    }
-  }, [router]);
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const firestore = getFirestore();
-        const userProfilesRef = collection(firestore, "userProfiles");
+    };
 
-        // Query to find the document with the matching firebaseUserId
-        const q = query(
-          userProfilesRef,
-          where("firebaseUserId", "==", firebaseUser.uid)
-        );
-        const querySnapshot = await getDocs(q);
+    const setUserSession = async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
 
-        let telegramLinked = false;
-
-        if (!querySnapshot.empty) {
-          const userDoc = querySnapshot.docs[0];
-          telegramLinked = userDoc.data().telegramLinked === true;
+        if (session?.session) {
+          const supabaseUser = session.session.user;
+          const profile = await fetchUserProfile(supabaseUser.id);
+          // If user profile is not found, redirect user to onboarding
+          setUser({
+            id: supabaseUser.id,
+            email: supabaseUser.email || null,
+            telegram_id: profile?.telegram_id || false,
+            onboarded: profile?.onboarded || false,
+          });
+          if (profile?.onboarded === false) {
+            router.push("/onboarding");
+          } else {
+            router.push("/dashboard");
+          }
+        } else {
+          setUser(null);
+          router.push("/sign-in");
         }
 
-        const extendedUser: ExtendedUser = {
-          ...firebaseUser,
-          telegramLinked,
-        };
-
-        setUser(extendedUser);
-      } else {
-        setUser(null);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching user session:", error);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
-  }, []);
+    const { data } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, session: Session | null) => {
+        console.log("Auth event:", _event, session);
+        setUserSession();
+      }
+    );
 
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (user) {
+      if (pathname === "/sign-in" || pathname === "/sign-up") {
+        router.push("/dashboard");
+      }
+      if (user.onboarded === false && pathname !== "/onboarding") {
+        router.push("/onboarding");
+      }
+    } else {
+      if (pathname !== "/sign-in" && pathname !== "/sign-up") {
+        router.push("/sign-in");
+      }
+    }
+  }, [pathname, router, user]);
   const signOut = async () => {
-    await auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    alert("Sign out");
+    console.log(error);
+    if (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Sign Out Failed",
+        description: "An error occurred while trying to sign out.",
+      });
+    }
+    toast({
+      title: "Sign Out Successful",
+      description: "You have been signed out.",
+    });
     setUser(null);
   };
 
-  const updateLoggedInUser = (updatedUser: User | ExtendedUser | null) => {
+  const updateLoggedInUser = (updatedUser: ExtendedUser | null) => {
     setUser(updatedUser);
   };
 
@@ -112,7 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// Hook for consuming the authentication context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
