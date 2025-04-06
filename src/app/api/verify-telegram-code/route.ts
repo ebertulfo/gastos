@@ -1,21 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore } from "firebase-admin/firestore";
-import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-async function initializeFirestore() {
-  // Initialize Firebase Admin if not already initialized
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      }),
-    });
-  }
-
-  return getFirestore();
-}
 export async function POST(req: NextRequest) {
   try {
     const { code, userId } = await req.json();
@@ -33,45 +18,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const firestore = await initializeFirestore();
-    const codeDoc = await firestore.collection("authCodes").doc(code).get();
+    const supabase = getSupabaseAdmin();
+    
+    // Look up the code in the auth_codes table
+    const { data: codeData, error: codeError } = await supabase
+      .from("auth_codes")
+      .select("*")
+      .eq("code", code)
+      .single();
 
-    if (!codeDoc.exists) {
+    if (codeError || !codeData) {
       return NextResponse.json(
         { success: false, message: "Invalid or expired code" },
         { status: 400 }
       );
     }
 
-    const { telegramUserId, expiresAt } = codeDoc.data() as {
-      telegramUserId: string;
-      expiresAt: FirebaseFirestore.Timestamp;
-    };
+    const { telegram_user_id, expires_at } = codeData;
 
     // Check if the code has expired
-    if (expiresAt.toDate() < new Date()) {
-      await firestore.collection("authCodes").doc(code).delete(); // Clean up expired code
+    if (new Date(expires_at) < new Date()) {
+      // Clean up expired code
+      await supabase.from("auth_codes").delete().eq("code", code);
       return NextResponse.json(
         { success: false, message: "Code expired" },
         { status: 400 }
       );
     }
 
-    // Link the Telegram user ID to the user’s account in Firestore
-    await firestore
-      .collection("userProfiles")
-      .doc()
-      .set(
-        {
-          firebaseUserId: userId,
-          telegramUserId: String(telegramUserId),
-          telegramLinked: true,
-        },
-        { merge: true }
+    // Link the Telegram user ID to the user's account in Supabase
+    const { error: updateError } = await supabase
+      .from("user_profiles")
+      .upsert({
+        id: userId,
+        telegram_id: String(telegram_user_id),
+        telegramLinked: true,
+      });
+
+    if (updateError) {
+      console.error("Error updating user profile:", updateError);
+      return NextResponse.json(
+        { success: false, message: "Error linking accounts" },
+        { status: 500 }
       );
+    }
 
     // Delete the code after successful linking
-    await firestore.collection("authCodes").doc(code).delete();
+    await supabase.from("auth_codes").delete().eq("code", code);
 
     return NextResponse.json({ success: true });
   } catch (error) {

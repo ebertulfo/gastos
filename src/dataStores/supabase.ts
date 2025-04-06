@@ -6,12 +6,12 @@ export class SupabaseStore implements DataStore {
   private collectionRef = supabase;
 
   async addSpending(data: Spending): Promise<void> {
-    await this.collectionRef.from("spendings").insert(data);
+    await this.collectionRef.from("user_spendings").insert(data);
   }
 
   async getSpendings(): Promise<Spending[]> {
     const { data, error } = await this.collectionRef
-      .from("spendings")
+      .from("user_spendings")
       .select("*");
 
     if (error) {
@@ -22,16 +22,16 @@ export class SupabaseStore implements DataStore {
   }
 
   async deleteSpending(id: string): Promise<void> {
-    await this.collectionRef.from("spendings").delete().match({ id });
+    await this.collectionRef.from("user_spendings").delete().match({ id });
   }
 
   async updateSpending(id: string, data: Partial<Spending>): Promise<void> {
-    await this.collectionRef.from("spendings").update(data).match({ id });
+    await this.collectionRef.from("user_spendings").update(data).match({ id });
   }
 
   async getProfile(userId: string) {
     const { data, error } = await this.collectionRef
-      .from("profile")
+      .from("user_profiles")
       .select("*")
       .eq("id", userId)
       .single();

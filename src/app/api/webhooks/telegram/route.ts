@@ -9,28 +9,14 @@ import {
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import OpenAI from "openai";
 import { OpenAIExpenseParser } from "@/services/OpenAIExpenseParser";
-import { ExpenseService } from "@/services/expenses";
-import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
 import { v4 as uuidv4 } from "uuid"; // for generating unique tokens
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const API_BASE_URL = process.env.API_BASE_URL!;
 const API_KEY = process.env.API_KEY!;
-async function initializeFirestore() {
-  // Initialize Firebase Admin if not already initialized
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      }),
-    });
-  }
 
-  return getFirestore();
-}
 export async function POST(req: NextRequest) {
   const update = await req.json();
   console.log("@@@ UPDATE", update);
@@ -80,16 +66,18 @@ export async function POST(req: NextRequest) {
 // Helper functions for each command
 async function sendWelcomeMessage(chatId: number, telegramUserId: number) {
   const oneTimeCode = uuidv4().slice(0, 6); // Generate a 6-character code
-
-  // Save the code to Firestore with an expiration time
-  const firestore = await initializeFirestore();
-  await firestore
-    .collection("authCodes")
-    .doc(oneTimeCode)
-    .set({
-      telegramUserId,
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // Code valid for 15 minutes
+  const supabase = getSupabaseAdmin();
+  
+  // Save the code to Supabase with an expiration time (15 minutes from now)
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  
+  await supabase
+    .from("auth_codes")
+    .insert({
+      code: oneTimeCode,
+      telegram_user_id: telegramUserId,
+      created_at: new Date().toISOString(),
+      expires_at: expiresAt.toISOString(),
     });
 
   // Send instructions to the user
@@ -181,12 +169,12 @@ async function handleGeneralMessage(
   telegramUserId: number,
   update: { message: { photo?: { file_id: string }[]; text?: string } }
 ) {
-  const firestore = await initializeFirestore();
-  const expenseService = new ExpenseService(firestore);
+  const expenseService = new SupabaseExpenseService();
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
   const expenseParser = new OpenAIExpenseParser(openai);
+  
   // Check if the message contains a photo
   let fileId;
   // If file is an image, automatically consider it as a log intent.
@@ -265,9 +253,10 @@ async function handleGeneralMessage(
         "Could you provide more details about this expense, like the category or date?"
       );
     }
-    const firebaseUserId = await getFirebaseUserId(telegramUserId.toString());
-    console.log("@@@ FIREBASE USER ID", firebaseUserId);
-    if (!firebaseUserId) {
+    
+    const userId = await getSupabaseUserId(telegramUserId.toString());
+    console.log("@@@ SUPABASE USER ID", userId);
+    if (!userId) {
       console.log("@@@ NO MAPPING FOUND");
       return await sendMessage(
         chatId,
@@ -277,7 +266,7 @@ async function handleGeneralMessage(
 
     const expenseData: Expense = {
       ...parsedExpense,
-      userId: firebaseUserId,
+      userId: userId,
       date: new Date(),
     };
 
@@ -336,9 +325,9 @@ async function handleGeneralMessage(
       );
     }
 
-    const firebaseUserId = await getFirebaseUserId(telegramUserId.toString());
-    console.log("@@@ FIREBASE USER ID", firebaseUserId);
-    if (!firebaseUserId) {
+    const userId = await getSupabaseUserId(telegramUserId.toString());
+    console.log("@@@ SUPABASE USER ID", userId);
+    if (!userId) {
       console.log("@@@ NO MAPPING FOUND");
       return await sendMessage(
         chatId,
@@ -347,7 +336,7 @@ async function handleGeneralMessage(
     }
 
     const expenses = await expenseService.get(
-      firebaseUserId,
+      userId,
       startDate,
       endDate,
       category as ExpenseCategory
@@ -398,16 +387,20 @@ async function sendMessage(
   }
 }
 
-async function getFirebaseUserId(
+async function getSupabaseUserId(
   telegramUserId: string
 ): Promise<string | null> {
-  const firestore = await initializeFirestore();
-  const userProfilesRef = firestore.collection("userProfiles");
-  const mappingSnapshot = await userProfilesRef
-    .where("telegramUserId", "==", telegramUserId)
-    .get();
-  if (mappingSnapshot.empty) {
+  const supabase = getSupabaseAdmin();
+  
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .select("id")
+    .eq("telegram_id", telegramUserId)
+    .single();
+
+  if (error || !data) {
     return null;
   }
-  return mappingSnapshot.docs[0].data().firebaseUserId;
+  
+  return data.id;
 }

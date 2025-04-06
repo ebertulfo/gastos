@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext"; // Assuming you're using useAuth to get current user info
-import { addExpense } from "@/lib/firebase/expenses";
+import { addExpense } from "@/lib/supabase/expenses";
 import { Expense, ExpenseCategory } from "@/schemas/expense";
 import React, { useState } from "react";
 
@@ -34,7 +34,7 @@ const AddExpenseDialog: React.FC = () => {
       amount: parseFloat(amount),
       category,
       date: new Date(date),
-      userId: user.uid,
+      userId: user.id,
     };
 
     try {

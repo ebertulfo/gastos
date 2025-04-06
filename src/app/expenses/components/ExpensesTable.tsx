@@ -16,7 +16,7 @@ import {
   deleteExpense,
   getUserExpenses,
   updateExpense,
-} from "@/lib/firebase/expenses";
+} from "@/lib/supabase/expenses";
 import { allowedCategories, Expense, ExpenseCategory } from "@/schemas/expense";
 import { Period } from "@/types";
 import { Loader2 } from "lucide-react";

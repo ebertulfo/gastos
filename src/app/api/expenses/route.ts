@@ -1,12 +1,10 @@
 // src/app/api/expenses/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore } from "firebase-admin/firestore";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { ExpenseSchema, Expense, ExpenseCategory } from "@/schemas/expense";
-import { ExpenseService } from "@/services/expenses";
+import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
 
 async function authenticate(req: NextRequest): Promise<NextResponse | null> {
-  const API_KEY = process.env.API_KEY; // Make sure to use your actual environment variable here
+  const API_KEY = process.env.API_KEY;
   const apiKey = req.headers.get("x-api-key");
   if (apiKey !== API_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,36 +12,8 @@ async function authenticate(req: NextRequest): Promise<NextResponse | null> {
   return null;
 }
 
-async function getFirebaseUserId(
-  telegramUserId: string
-): Promise<string | null> {
-  const firestore = await initializeFirestore();
-  const userProfilesRef = firestore.collection("userProfiles");
-  const mappingSnapshot = await userProfilesRef
-    .where("telegramUserId", "==", telegramUserId)
-    .get();
-  if (mappingSnapshot.empty) {
-    return null;
-  }
-  return mappingSnapshot.docs[0].data().firebaseUserId;
-}
-async function initializeFirestore() {
-  // Initialize Firebase Admin if not already initialized
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      }),
-    });
-  }
-
-  return getFirestore();
-}
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const firestore = await initializeFirestore();
-  const expenseService = new ExpenseService(firestore);
+  const expenseService = new SupabaseExpenseService();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -67,26 +37,24 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const firebaseUserId = await getFirebaseUserId(telegramUserId);
-    if (!firebaseUserId) {
+    const userId = await expenseService.getTelegramUserMapping(telegramUserId);
+    if (!userId) {
       return NextResponse.json(
         { error: "No mapping found for Telegram user ID" },
         { status: 404 }
       );
     }
 
-    const expenses = expenseService.get(
-      firebaseUserId,
+    const expenses = await expenseService.get(
+      userId,
       startDate,
       endDate,
       category as ExpenseCategory
     );
-    console.log("@@@ EXPENSESssss", expenses);
+    console.log("@@@ EXPENSES", expenses);
 
     return NextResponse.json(expenses, { status: 200 });
   } catch (error) {
-    console.log("@@@ POTANGINA MO", JSON.stringify(error));
-    console.log("@@@ erorr", error);
     console.error("Error handling GET request:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
@@ -96,8 +64,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const firestore = await initializeFirestore();
-  const expenseService = new ExpenseService(firestore);
+  const expenseService = new SupabaseExpenseService();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -126,8 +93,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const firebaseUserId = await getFirebaseUserId(telegramUserId);
-    if (!firebaseUserId) {
+    const userId = await expenseService.getTelegramUserMapping(telegramUserId);
+    if (!userId) {
       return NextResponse.json(
         { error: "No mapping found for Telegram user ID" },
         { status: 404 }
@@ -140,13 +107,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       category,
       date,
       description,
-      userId: firebaseUserId,
+      userId,
       createdAt: new Date().toISOString(),
     };
     console.log("@@@ NEW EXPENSE", newExpense);
-    expenseService.create(newExpense);
-    const docRef = await expenseService.create(newExpense);
-    return NextResponse.json({ id: docRef.id, ...newExpense }, { status: 201 });
+    const result = await expenseService.create(newExpense);
+    return NextResponse.json({ id: result.id, ...newExpense }, { status: 201 });
   } catch (error) {
     console.error("Error handling POST request:", error);
     return NextResponse.json(
@@ -157,8 +123,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function PUT(req: NextRequest): Promise<NextResponse> {
-  const firestore = await initializeFirestore();
-  const expenseService = new ExpenseService(firestore);
+  const expenseService = new SupabaseExpenseService();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);
@@ -178,8 +143,8 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const expensesRef = await expenseService.update(id, parseResult.data);
-    return NextResponse.json(expensesRef, { status: 200 });
+    await expenseService.update(id, parseResult.data);
+    return NextResponse.json({ id, ...parseResult.data }, { status: 200 });
   } catch (error) {
     console.error("Error handling PUT request:", error);
     return NextResponse.json(
@@ -190,8 +155,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
-  const firestore = await initializeFirestore();
-  const expenseService = new ExpenseService(firestore);
+  const expenseService = new SupabaseExpenseService();
   console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
   try {
     const authError = await authenticate(req);

@@ -9,7 +9,7 @@ import {
   deleteExpense,
   getUserExpenses,
   updateExpense,
-} from "@/lib/firebase/expenses";
+} from "@/lib/supabase/expenses";
 import { allowedCategories, Expense, ExpenseCategory } from "@/schemas/expense";
 import { Period } from "@/types";
 import { Loader2 } from "lucide-react";
@@ -35,7 +35,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ period }) => {
   useEffect(() => {
     if (user) {
       console.log("fetching expenses", period);
-      fetchExpenses(user.uid, period);
+      fetchExpenses(user.id, period);
     }
   }, [user, period]);
 
@@ -81,7 +81,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ period }) => {
           date: editValues.date,
         });
         setEditingExpense(null);
-        fetchExpenses(user!.uid, period);
+        fetchExpenses(user!.id, period);
       } catch (error) {
         console.error("Error updating expense:", error);
       }
