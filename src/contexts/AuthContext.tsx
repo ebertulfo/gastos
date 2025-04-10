@@ -11,7 +11,7 @@ interface ExtendedUser {
   id: string;
   email: string | null;
   telegram_id?: number | null;
-  onboarded: boolean;
+  is_onboarded: boolean;
 }
 
 interface AuthContextType {
@@ -30,42 +30,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+
+  // Handle authentication setup
   useEffect(() => {
     const dataStore = new SupabaseStore();
-    const fetchUserProfile = async (userId: string) => {
+    
+    const fetchUserProfile = async (user_id: string) => {
       try {
-        const userProfile = await dataStore.getProfile(userId);
-        return userProfile;
+        return await dataStore.getProfile(user_id);
       } catch (error) {
         console.error("Error fetching user profile:", error);
         return null;
       }
     };
 
-    const setUserSession = async () => {
+    const setupSession = async () => {
       try {
         const { data: session } = await supabase.auth.getSession();
 
         if (session?.session) {
           const supabaseUser = session.session.user;
           const profile = await fetchUserProfile(supabaseUser.id);
-          // If user profile is not found, redirect user to onboarding
+          
           setUser({
             id: supabaseUser.id,
             email: supabaseUser.email || null,
-            telegram_id: profile?.telegram_id || false,
-            onboarded: profile?.onboarded || false,
+            telegram_id: profile?.telegram_id || null,
+            is_onboarded: profile?.is_onboarded || false,
           });
-          if (profile?.onboarded === false) {
-            router.push("/onboarding");
-          } else {
-            router.push("/dashboard");
-          }
         } else {
           setUser(null);
-          router.push("/sign-in");
+          // Redirect to sign in if not on a public path
+          const publicPaths = ["/sign-in", "/sign-up", "/"];
+          if (!publicPaths.includes(pathname)) {
+            router.push("/sign-in");
+          }
         }
-
+        
         setLoading(false);
       } catch (error) {
         console.error("Error fetching user session:", error);
@@ -73,50 +75,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
+    // Listen for auth changes
     const { data } = supabase.auth.onAuthStateChange(
-      async (_event: AuthChangeEvent, session: Session | null) => {
-        console.log("Auth event:", _event, session);
-        setUserSession();
+      async (event: AuthChangeEvent, session: Session | null) => {
+        console.log("Auth event:", event);
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+          setupSession();
+        }
       }
     );
+
+    // Initial auth check
+    setupSession();
 
     return () => {
       data.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [pathname, router]);
 
-  const pathname = usePathname();
-
+  // Handle redirects based on auth state and current path
   useEffect(() => {
-    if (user) {
-      if (pathname === "/sign-in" || pathname === "/sign-up") {
-        router.push("/dashboard");
+    if (loading) return; // Don't redirect while still loading
+
+    const handleRouting = async () => {
+      // User is logged in
+      if (user) {
+        if (pathname === "/sign-in" || pathname === "/sign-up") {
+          router.push("/dashboard");
+          return;
+        }
+        
+        if (user.is_onboarded === false && pathname !== "/onboarding") {
+          router.push("/onboarding");
+          return;
+        }
+      } 
+      // User is not logged in
+      else {
+        const publicPaths = ["/sign-in", "/sign-up", "/"];
+        if (!publicPaths.includes(pathname)) {
+          router.push("/sign-in");
+          return;
+        }
       }
-      if (user.onboarded === false && pathname !== "/onboarding") {
-        router.push("/onboarding");
-      }
-    } else {
-      if (pathname !== "/sign-in" && pathname !== "/sign-up") {
-        router.push("/sign-in");
-      }
-    }
-  }, [pathname, router, user]);
+    };
+
+    handleRouting();
+  }, [pathname, user, loading, router]);
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
-    alert("Sign out");
-    console.log(error);
+    
     if (error) {
       console.error("Error signing out:", error);
       toast({
         title: "Sign Out Failed",
         description: "An error occurred while trying to sign out.",
       });
+      return;
     }
+    
     toast({
       title: "Sign Out Successful",
       description: "You have been signed out.",
     });
     setUser(null);
+    router.push("/sign-in");
   };
 
   const updateLoggedInUser = (updatedUser: ExtendedUser | null) => {
@@ -124,9 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, loading, signOut, updateLoggedInUser }}
-    >
+    <AuthContext.Provider value={{ user, loading, signOut, updateLoggedInUser }}>
       {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );

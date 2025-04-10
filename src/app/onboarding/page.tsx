@@ -112,14 +112,14 @@ export default function Onboarding() {
       
       // Update the user's profile in Supabase
       const { error } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .upsert({
           id: user.id,
           full_name: data.name,
           country: data.country,
           currency: data.currency,
           telegram_id: data.telegram_id || null,
-          onboarded: true,
+          is_onboarded: true,
           updated_at: new Date().toISOString(),
         });
 
@@ -130,7 +130,7 @@ export default function Onboarding() {
       // Update the user object in context
       updateLoggedInUser({
         ...user,
-        onboarded: true,
+        is_onboarded: true,
       });
 
       toast({

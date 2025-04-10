@@ -20,7 +20,7 @@ export default function TelegramBotPage() {
     const response = await fetch("/api/verify-telegram-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, userId: user?.uid }),
+      body: JSON.stringify({ code, user_id: user?.uid }),
     });
     const data = await response.json();
 

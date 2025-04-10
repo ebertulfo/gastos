@@ -8,7 +8,7 @@ export class LogExpenseHandler implements IExpenseHandler {
     private firestore: FirebaseFirestore.Firestore
   ) {}
 
-  async handle(telegramUserId: string, message: string): Promise<APIResponse> {
+  async handle(telegram_user_id: string, message: string): Promise<APIResponse> {
     const parsedExpense = await this.expenseParser.parseExpense(message);
 
     if (!parsedExpense.amount || !parsedExpense.description) {
@@ -20,8 +20,8 @@ export class LogExpenseHandler implements IExpenseHandler {
 
     const expenseData = {
       ...parsedExpense,
-      telegramUserId,
-      createdAt: new Date().toISOString(),
+      telegram_user_id,
+      created_at: new Date().toISOString(),
     };
 
     await this.firestore.collection("expenses").add(expenseData);

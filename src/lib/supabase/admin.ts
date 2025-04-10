@@ -68,13 +68,13 @@ export async function getCurrentUser() {
   }
 }
 
-export async function revokeAllSessions(userId: string) {
+export async function revokeAllSessions(user_id: string) {
   try {
     const supabase = getSupabaseAdmin();
     
     // Sign out from all devices
     const { error } = await supabase.auth.admin.signOut({
-      userId: userId,
+      user_id: user_id,
       scope: 'global'
     });
     

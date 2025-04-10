@@ -29,26 +29,26 @@ export async function POST(req: NextRequest) {
   }
 
   const chatId = update.message.chat.id;
-  const telegramUserId = update.message.from.id;
+  const telegram_user_id = update.message.from.id;
   const text = update.message.text;
   try {
     // Command handling
     if (!update.message.photo) {
       if (text.startsWith("/start")) {
-        await sendWelcomeMessage(chatId, telegramUserId);
+        await sendWelcomeMessage(chatId, telegram_user_id);
       } else if (text.startsWith("/addexpense")) {
-        await handleAddExpense(chatId, telegramUserId, text);
+        await handleAddExpense(chatId, telegram_user_id, text);
       } else if (text.startsWith("/viewexpenses")) {
-        await handleViewExpenses(chatId, telegramUserId);
+        await handleViewExpenses(chatId, telegram_user_id);
       } else if (text.startsWith("/deleteexpense")) {
-        await handleDeleteExpense(chatId, telegramUserId, text);
+        await handleDeleteExpense(chatId, telegram_user_id, text);
       } else {
         // General message handling
-        await handleGeneralMessage(chatId, telegramUserId, update);
+        await handleGeneralMessage(chatId, telegram_user_id, update);
       }
     } else {
       // General message handling
-      await handleGeneralMessage(chatId, telegramUserId, update);
+      await handleGeneralMessage(chatId, telegram_user_id, update);
     }
 
     return NextResponse.json({ status: "Update handled" });
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Helper functions for each command
-async function sendWelcomeMessage(chatId: number, telegramUserId: number) {
+async function sendWelcomeMessage(chatId: number, telegram_user_id: number) {
   const oneTimeCode = uuidv4().slice(0, 6); // Generate a 6-character code
   const supabase = getSupabaseAdmin();
   
@@ -75,7 +75,7 @@ async function sendWelcomeMessage(chatId: number, telegramUserId: number) {
     .from("auth_codes")
     .insert({
       code: oneTimeCode,
-      telegram_user_id: telegramUserId,
+      telegram_user_id: telegram_user_id,
       created_at: new Date().toISOString(),
       expires_at: expiresAt.toISOString(),
     });
@@ -90,7 +90,7 @@ async function sendWelcomeMessage(chatId: number, telegramUserId: number) {
 
 async function handleAddExpense(
   chatId: number,
-  telegramUserId: number,
+  telegram_user_id: number,
   text: string
 ) {
   const expenseDetails = text.replace("/addexpense ", "").split(",");
@@ -107,7 +107,7 @@ async function handleAddExpense(
     await axios.post(
       `${API_BASE_URL}/api/expenses`,
       {
-        telegramUserId,
+        telegram_user_id,
         title,
         amount: parseFloat(amount),
         category,
@@ -122,10 +122,10 @@ async function handleAddExpense(
   }
 }
 
-async function handleViewExpenses(chatId: number, telegramUserId: number) {
+async function handleViewExpenses(chatId: number, telegram_user_id: number) {
   try {
     const response = await axios.get(`${API_BASE_URL}/api/expenses`, {
-      params: { telegramUserId },
+      params: { telegram_user_id },
       headers: { "x-api-key": API_KEY },
     });
     const expenses = response.data;
@@ -148,13 +148,13 @@ async function handleViewExpenses(chatId: number, telegramUserId: number) {
 
 async function handleDeleteExpense(
   chatId: number,
-  telegramUserId: number,
+  telegram_user_id: number,
   text: string
 ) {
   const expenseId = text.replace("/deleteexpense ", "").trim();
   try {
     await axios.delete(`${API_BASE_URL}/api/expenses`, {
-      data: { telegramUserId, id: expenseId },
+      data: { telegram_user_id, id: expenseId },
       headers: { "x-api-key": API_KEY },
     });
     await sendMessage(chatId, `Expense ID ${expenseId} deleted successfully!`);
@@ -166,7 +166,7 @@ async function handleDeleteExpense(
 
 async function handleGeneralMessage(
   chatId: number,
-  telegramUserId: number,
+  telegram_user_id: number,
   update: { message: { photo?: { file_id: string }[]; text?: string } }
 ) {
   const expenseService = new SupabaseExpenseService();
@@ -254,9 +254,9 @@ async function handleGeneralMessage(
       );
     }
     
-    const userId = await getSupabaseUserId(telegramUserId.toString());
-    console.log("@@@ SUPABASE USER ID", userId);
-    if (!userId) {
+    const user_id = await getSupabaseuser_id(telegram_user_id.toString());
+    console.log("@@@ SUPABASE USER ID", user_id);
+    if (!user_id) {
       console.log("@@@ NO MAPPING FOUND");
       return await sendMessage(
         chatId,
@@ -266,7 +266,7 @@ async function handleGeneralMessage(
 
     const expenseData: Expense = {
       ...parsedExpense,
-      userId: userId,
+      user_id: user_id,
       date: new Date(),
     };
 
@@ -313,21 +313,21 @@ async function handleGeneralMessage(
     const endDate = parsedQuery?.end_date || new Date().toISOString();
     const category = parsedQuery?.category || null;
     console.log("@@@ QUERY PARAMS", {
-      telegramUserId,
+      telegram_user_id,
       startDate,
       endDate,
       category,
     });
-    if (!telegramUserId) {
+    if (!telegram_user_id) {
       return await sendMessage(
         chatId,
         "You don't seem to be logged in yet. Please use the /start command to link your account."
       );
     }
 
-    const userId = await getSupabaseUserId(telegramUserId.toString());
-    console.log("@@@ SUPABASE USER ID", userId);
-    if (!userId) {
+    const user_id = await getSupabaseuser_id(telegram_user_id.toString());
+    console.log("@@@ SUPABASE USER ID", user_id);
+    if (!user_id) {
       console.log("@@@ NO MAPPING FOUND");
       return await sendMessage(
         chatId,
@@ -336,7 +336,7 @@ async function handleGeneralMessage(
     }
 
     const expenses = await expenseService.get(
-      userId,
+      user_id,
       startDate,
       endDate,
       category as ExpenseCategory
@@ -387,15 +387,15 @@ async function sendMessage(
   }
 }
 
-async function getSupabaseUserId(
-  telegramUserId: string
+async function getSupabaseuser_id(
+  telegram_user_id: string
 ): Promise<string | null> {
   const supabase = getSupabaseAdmin();
   
   const { data, error } = await supabase
     .from("user_profiles")
     .select("id")
-    .eq("telegram_id", telegramUserId)
+    .eq("telegram_id", telegram_user_id)
     .single();
 
   if (error || !data) {

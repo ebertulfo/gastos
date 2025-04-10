@@ -6,7 +6,7 @@ export interface IExpenseService {
   update(id: string, data: Expense): Promise<Expense>;
   delete(id: string): Promise<void>;
   get(
-    userId: string,
+    user_id: string,
     startDate: string,
     endDate: string,
     category: ExpenseCategory

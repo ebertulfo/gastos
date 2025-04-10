@@ -24,7 +24,7 @@ export const addExpense = async (expense: Expense) => {
 
     const docRef = await addDoc(collection(db, "expenses"), {
       ...expense,
-      userId: user.uid, // Make sure to set the userId to the authenticated user's UID
+      user_id: user.uid, // Make sure to set the user_id to the authenticated user's UID
       date: Timestamp.fromDate(
         expense.date ? new Date(expense.date) : new Date()
       ), // Ensure date is saved in ISO format
@@ -39,12 +39,12 @@ export const addExpense = async (expense: Expense) => {
 
 // Function to get all expenses for a user
 export const getUserExpenses = async (
-  userId: string,
+  user_id: string,
   filters: SearchFilters
 ) => {
   console.log("@@@ GET");
   try {
-    let q = query(collection(db, "expenses"), where("userId", "==", userId));
+    let q = query(collection(db, "expenses"), where("user_id", "==", user_id));
 
     // Apply additional filters if provided
     if (filters.period) {
@@ -53,7 +53,7 @@ export const getUserExpenses = async (
       const dateRange = convertPeriodToDateRange(filters.period);
       q = query(
         collection(db, "expenses"),
-        where("userId", "==", userId),
+        where("user_id", "==", user_id),
         where("date", ">=", dateRange.start),
         where("date", "<=", dateRange.end)
       );

@@ -15,9 +15,9 @@ export const addExpense = async (expense: Expense) => {
       .from("expenses")
       .insert({
         ...expense,
-        userId: user.id,
+        user_id: user.id,
         date: expense.date ? new Date(expense.date).toISOString() : now.toISOString(),
-        createdAt: now.toISOString(),
+        created_at: now.toISOString(),
       })
       .select()
       .single();
@@ -32,14 +32,14 @@ export const addExpense = async (expense: Expense) => {
 
 // Function to get all expenses for a user
 export const getUserExpenses = async (
-  userId: string,
+  user_id: string,
   filters: SearchFilters
 ) => {
   try {
     let query = supabase
       .from("expenses")
       .select("*")
-      .eq("userId", userId);
+      .eq("user_id", user_id);
 
     // Apply additional filters if provided
     if (filters.period) {
@@ -57,7 +57,7 @@ export const getUserExpenses = async (
     return (data || []).map(expense => ({
       ...expense,
       date: new Date(expense.date),
-      createdAt: expense.createdAt ? new Date(expense.createdAt) : null,
+      created_at: expense.created_at ? new Date(expense.created_at) : null,
     })) as Expense[];
   } catch (error) {
     console.error("Error retrieving expenses: ", error);

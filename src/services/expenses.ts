@@ -12,7 +12,7 @@ export class ExpenseService implements IExpenseService {
       date: data.date
         ? Timestamp.fromDate(new Date(data.date))
         : Timestamp.now(),
-      createdAt: Timestamp.fromDate(new Date()),
+      created_at: Timestamp.fromDate(new Date()),
     };
     const expensesRef = this.firestore.collection("expenses");
     const doc = await expensesRef.add(newExpense);
@@ -37,20 +37,20 @@ export class ExpenseService implements IExpenseService {
   }
 
   async get(
-    userId: string,
+    user_id: string,
     startDate: string | null,
     endDate: string | null,
     category: ExpenseCategory | "All"
   ): Promise<Expense[]> {
     console.log(
       "@@@ GET EXPENSES PARAMS",
-      userId,
+      user_id,
       startDate,
       endDate,
       category
     );
     const expensesRef = this.firestore.collection("expenses");
-    let query = expensesRef.where("userId", "==", userId);
+    let query = expensesRef.where("user_id", "==", user_id);
 
     // Apply date filters if startDate and/or endDate are provided
     if (startDate) {

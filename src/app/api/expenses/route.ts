@@ -12,50 +12,36 @@ async function authenticate(req: NextRequest): Promise<NextResponse | null> {
   return null;
 }
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  const expenseService = new SupabaseExpenseService();
-  console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
+export async function GET(req: NextRequest) {
   try {
-    const authError = await authenticate(req);
-    if (authError) return authError;
+    const searchParams = req.nextUrl.searchParams;
+    const telegram_user_id = searchParams.get("telegram_user_id");
+    const user_id = searchParams.get("user_id");
 
-    const { searchParams } = new URL(req.url);
-    const telegramUserId = searchParams.get("telegramUserId");
-    const startDate = searchParams.get("start_date");
-    const endDate = searchParams.get("end_date");
-    const category = searchParams.get("category") || null;
-    console.log("@@@ QUERY PARAMS", {
-      telegramUserId,
-      startDate,
-      endDate,
-      category,
-    });
-    if (!telegramUserId) {
+    if (telegram_user_id) {
+      // Redirect to Telegram endpoint
+      const response = await fetch(`${req.nextUrl.origin}/api/expenses/telegram${req.nextUrl.search}`, {
+        method: 'GET',
+      });
+      
+      const data = await response.json();
+      return NextResponse.json(data, { status: response.status });
+    } else if (user_id) {
+      // Redirect to Web endpoint
+      const response = await fetch(`${req.nextUrl.origin}/api/expenses/web${req.nextUrl.search}`, {
+        method: 'GET',
+      });
+      
+      const data = await response.json();
+      return NextResponse.json(data, { status: response.status });
+    } else {
       return NextResponse.json(
-        { error: "Missing Telegram user ID" },
+        { error: "Missing user identifier (telegram_user_id or user_id)" },
         { status: 400 }
       );
     }
-
-    const userId = await expenseService.getTelegramUserMapping(telegramUserId);
-    if (!userId) {
-      return NextResponse.json(
-        { error: "No mapping found for Telegram user ID" },
-        { status: 404 }
-      );
-    }
-
-    const expenses = await expenseService.get(
-      userId,
-      startDate,
-      endDate,
-      category as ExpenseCategory
-    );
-    console.log("@@@ EXPENSES", expenses);
-
-    return NextResponse.json(expenses, { status: 200 });
   } catch (error) {
-    console.error("Error handling GET request:", error);
+    console.error("Error in expenses routing:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
@@ -63,58 +49,42 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const expenseService = new SupabaseExpenseService();
-  console.log("@@@ REQUEST TO EXPENSE API", req.method, req.url);
+export async function POST(req: NextRequest) {
   try {
-    const authError = await authenticate(req);
-    if (authError) return authError;
-
-    const body: Expense = await req.json();
-    console.log("@@@ BODY", body);
-    const parseResult = ExpenseSchema.safeParse(body);
-    console.log("@@@ PARSE RESULT", parseResult);
-    if (!parseResult.success) {
-      console.log("@@@ PARSE ERROR", parseResult.error.errors);
-      return NextResponse.json(
-        {
-          error: "Invalid expense data",
-          details: parseResult.error.errors,
+    const body = await req.json();
+    
+    if (body.telegram_user_id) {
+      // Redirect to Telegram endpoint
+      const response = await fetch(`${req.nextUrl.origin}/api/expenses/telegram`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify(body),
+      });
+      
+      const data = await response.json();
+      return NextResponse.json(data, { status: response.status });
+    } else if (body.user_id) {
+      // Redirect to Web endpoint
+      const response = await fetch(`${req.nextUrl.origin}/api/expenses/web`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      
+      const data = await response.json();
+      return NextResponse.json(data, { status: response.status });
+    } else {
+      return NextResponse.json(
+        { error: "Missing user identifier (telegram_user_id or user_id)" },
         { status: 400 }
       );
     }
-    const telegramUserId = parseResult.data.telegramUserId;
-
-    if (!telegramUserId) {
-      return NextResponse.json(
-        { error: "Missing Telegram user ID" },
-        { status: 400 }
-      );
-    }
-
-    const userId = await expenseService.getTelegramUserMapping(telegramUserId);
-    if (!userId) {
-      return NextResponse.json(
-        { error: "No mapping found for Telegram user ID" },
-        { status: 404 }
-      );
-    }
-
-    const { amount, category, date, description } = parseResult.data;
-    const newExpense = {
-      amount,
-      category,
-      date,
-      description,
-      userId,
-      createdAt: new Date().toISOString(),
-    };
-    console.log("@@@ NEW EXPENSE", newExpense);
-    const result = await expenseService.create(newExpense);
-    return NextResponse.json({ id: result.id, ...newExpense }, { status: 201 });
   } catch (error) {
-    console.error("Error handling POST request:", error);
+    console.error("Error in expenses routing:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

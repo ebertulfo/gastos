@@ -5,10 +5,22 @@ import { createClient } from "@supabase/supabase-js";
 export class SupabaseExpenseService implements IExpenseService {
   private supabase;
 
-  constructor() {
+  constructor(authToken?: string) {
     this.supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+        global: {
+          headers: authToken ? {
+            Authorization: `Bearer ${authToken}`
+          } : {}
+        }
+      }
     );
   }
 
@@ -16,7 +28,7 @@ export class SupabaseExpenseService implements IExpenseService {
     const newExpense = {
       ...data,
       date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
     const { data: createdExpense, error } = await this.supabase
@@ -26,6 +38,7 @@ export class SupabaseExpenseService implements IExpenseService {
       .single();
 
     if (error) {
+      console.log('@@@ ERROR CREATING EXPENSE', error)
       throw new Error(`Error creating expense: ${error.message}`);
     }
 
@@ -62,14 +75,14 @@ export class SupabaseExpenseService implements IExpenseService {
   }
 
   async get(
-    userId: string,
+    user_id: string,
     startDate: string | null,
     endDate: string | null,
     category: ExpenseCategory | "All"
   ): Promise<Expense[]> {
     console.log(
       "@@@ GET EXPENSES PARAMS",
-      userId,
+      user_id,
       startDate,
       endDate,
       category
@@ -78,7 +91,7 @@ export class SupabaseExpenseService implements IExpenseService {
     let query = this.supabase
       .from("expenses")
       .select("*")
-      .eq("userId", userId);
+      .eq("user_id", user_id);
 
     // Apply date filters if startDate and/or endDate are provided
     if (startDate) {
@@ -107,7 +120,7 @@ export class SupabaseExpenseService implements IExpenseService {
       ...expense,
       // Convert ISO strings to Date objects if needed for consistency
       date: expense.date ? new Date(expense.date) : null,
-      createdAt: expense.createdAt ? new Date(expense.createdAt) : null,
+      created_at: expense.created_at ? new Date(expense.created_at) : null,
     })) as Expense[];
   }
 }

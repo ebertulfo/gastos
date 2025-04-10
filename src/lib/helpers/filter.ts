@@ -1,26 +1,26 @@
-import { Periods } from "@/enums/Period";
-import { DateRange, Period } from "@/types";
+import { Period } from "@/enums/Period"; // Correct import for Period enum
+import { DateRange } from "@/types";
 
 export const convertPeriodToDateRange = (period: Period): DateRange => {
   console.log(period);
   const now = new Date();
   switch (period) {
-    case Periods.Today:
+    case Period.Today: // Updated to use Period enum
       return {
         start: startOfDay(now),
         end: endOfDay(now),
       };
-    case Periods.ThisWeek:
+    case Period.ThisWeek:
       return {
         start: startOfWeek(now),
         end: endOfWeek(now),
       };
-    case Periods.ThisMonth:
+    case Period.ThisMonth:
       return {
         start: startOfMonth(now),
         end: endOfMonth(now),
       };
-    case Periods.ThisYear:
+    case Period.ThisYear:
       return {
         start: startOfYear(now),
         end: endOfYear(now),

@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   try {
-    const { code, userId } = await req.json();
+    const { code, user_id } = await req.json();
     if (!code) {
       return NextResponse.json(
         { success: false, message: "Code is required" },
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!userId) {
+    if (!user_id) {
       return NextResponse.json(
         { success: false, message: "User ID is required" },
         { status: 400 }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const { error: updateError } = await supabase
       .from("user_profiles")
       .upsert({
-        id: userId,
+        id: user_id,
         telegram_id: String(telegram_user_id),
         telegramLinked: true,
       });

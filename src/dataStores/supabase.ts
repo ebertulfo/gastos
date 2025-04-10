@@ -29,11 +29,11 @@ export class SupabaseStore implements DataStore {
     await this.collectionRef.from("user_spendings").update(data).match({ id });
   }
 
-  async getProfile(userId: string) {
+  async getProfile(user_id: string) {
     const { data, error } = await this.collectionRef
       .from("user_profiles")
       .select("*")
-      .eq("id", userId)
+      .eq("id", user_id)
       .single();
 
     if (error) {

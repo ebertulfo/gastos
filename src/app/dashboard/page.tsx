@@ -24,10 +24,10 @@ export default function DashboardPage() {
     }
   }, [user, activePeriod]);
 
-  const fetchExpenses = async (userId: string, period: Period) => {
+  const fetchExpenses = async (user_id: string, period: Period) => {
     try {
       setLoading(true);
-      const userExpenses = await getUserExpenses(userId, { period });
+      const userExpenses = await getUserExpenses(user_id, { period });
       setExpenses(userExpenses);
     } catch (error) {
       console.error("Error fetching expenses:", error);

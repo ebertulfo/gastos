@@ -29,14 +29,14 @@ create policy "Users can update their own profile"
 -- Expenses Table
 create table if not exists public.expenses (
   id uuid primary key default uuid_generate_v4(),
-  userId uuid references auth.users(id),
+  user_id uuid references auth.users(id),
   amount decimal not null,
   description text,
   category text,
   date timestamptz default now(),
   createdAt timestamptz default now(),
   currency text default 'USD',
-  telegramUserId text
+  telegram_user_id text
 );
 
 -- Enable RLS on expenses
@@ -45,19 +45,19 @@ alter table public.expenses enable row level security;
 -- Row-level security policy for expenses (users can only see their own expenses)
 create policy "Users can view their own expenses" 
   on public.expenses 
-  for select using (auth.uid() = userId);
+  for select using (auth.uid() = user_id);
 
 create policy "Users can insert their own expenses" 
   on public.expenses 
-  for insert with check (auth.uid() = userId);
+  for insert with check (auth.uid() = user_id);
 
 create policy "Users can update their own expenses" 
   on public.expenses 
-  for update using (auth.uid() = userId);
+  for update using (auth.uid() = user_id);
 
 create policy "Users can delete their own expenses" 
   on public.expenses 
-  for delete using (auth.uid() = userId);
+  for delete using (auth.uid() = user_id);
 
 -- Auth Codes Table (for Telegram integration)
 create table if not exists public.auth_codes (
@@ -76,10 +76,10 @@ create table if not exists public.auth_tokens (
 );
 
 -- Index for faster lookup
-create index if not exists idx_expenses_user_id on public.expenses(userId);
+create index if not exists idx_expenses_user_id on public.expenses(user_id);
 create index if not exists idx_expenses_date on public.expenses(date);
 create index if not exists idx_expenses_category on public.expenses(category);
-create index if not exists idx_expenses_telegram_user_id on public.expenses(telegramUserId);
+create index if not exists idx_expenses_telegram_user_id on public.expenses(telegram_user_id);
 
 -- Function to update the updated_at timestamp
 create or replace function public.handle_updated_at()
