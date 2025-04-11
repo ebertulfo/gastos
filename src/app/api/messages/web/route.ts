@@ -8,6 +8,7 @@ import {
 } from "@/schemas/expense";
 import { OpenAIExpenseParser } from "@/services/OpenAIExpenseParser";
 import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   // Initialize OpenAI
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
   try {
     const expenseParser = new OpenAIExpenseParser(openai);
     const { user_id, message, file } = await req.json();
+
+    console.log("Received request with user_id:", user_id);
 
     if (!user_id) {
       return NextResponse.json(
@@ -32,17 +35,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get the authorization header from the request
+    const authHeader = req.headers.get('authorization');
+    const authToken = authHeader?.replace('Bearer ', '');
+    
+    // Create expense service with auth token
+    const expenseService = new SupabaseExpenseService(authToken);
+
     // If file is provided, automatically consider it as a log intent.
     let intent = "log";
     let fileBuffer;
     if (!file) {
       const intentCompletion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
             content:
-              "Determine if the user message is an 'expense logging' or an 'expense query'. Respond with 'log' for logging and 'query' for querying.",
+              "You determine if a message is about logging an expense or querying expenses. Respond ONLY with 'log' or 'query'.\n\nRules:\n1. If the message starts with a number or contains currency symbols, it's likely a 'log'\n2. If the message contains words like 'how much', 'total', 'spent', 'show me', it's a 'query'\n3. If the message is describing a purchase or expense (e.g., 'hotel', 'food', 'taxi'), it's a 'log'\n4. If unsure, default to 'log' as it's better to ask for clarification during expense parsing",
           },
           { role: "user", content: message },
         ],
@@ -52,7 +62,7 @@ export async function POST(req: NextRequest) {
       const intentContent = intentCompletion.choices[0]?.message?.content;
       if (!intentContent) {
         return NextResponse.json(
-          { reply: "Failed to determine intent." },
+          { error: "Failed to determine intent." },
           { status: 400 }
         );
       }
@@ -71,7 +81,7 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error("Error processing file:", error);
         return NextResponse.json(
-          { reply: "Failed to process the uploaded file" },
+          { error: "Failed to process the uploaded file" },
           { status: 400 }
         );
       }
@@ -101,25 +111,29 @@ export async function POST(req: NextRequest) {
 
       const expenseData: Expense = {
         ...parsedExpense,
-        user_id: String(user_id),
+        user_id: user_id,
         date: new Date().toISOString(),
       };
 
-      // Validate the expense
-      const validatedExpense = OpenAIExpenseSchema.parse(expenseData);
-
-      // Get the authorization header from the request
-      const authHeader = req.headers.get('authorization');
-      const authToken = authHeader?.replace('Bearer ', '');
-
-      // Log the expense
-      const expenseService = new SupabaseExpenseService(authToken);
-      const result = await expenseService.create(validatedExpense);
-
-      return NextResponse.json({
-        message: `Expense logged: ${result.amount} for ${result.description}`,
-        expense: result,
-      });
+      try {
+        const newExpense = await expenseService.create(expenseData);
+        return NextResponse.json(
+          {
+            message: `Logged your spending of $${newExpense.amount} on ${
+              expenseData.category || "unspecified category"
+            } with description: "${newExpense.description}".`,
+            action: "expense",
+            expense: newExpense,
+          },
+          { status: 200 }
+        );
+      } catch (error) {
+        console.error("Error creating expense:", error);
+        return NextResponse.json(
+          { error: "Failed to log expense." },
+          { status: 500 }
+        );
+      }
     }
 
     // Step 3: Handle Expense Querying
@@ -134,7 +148,7 @@ export async function POST(req: NextRequest) {
               .slice(
                 0,
                 10
-              )}. Extract the start_date and end_date for the query from the user's input. Only include a category if the user explicitly specifies one from Food, Transportation, Utilities, Entertainment, Clothing, or Others. **If the user does not mention a category, leave the field blank as "All"**`,
+              )}. Extract the start_date and end_date for the query from the user's input. Only include a category if the user explicitly specifies one from Food, Transportation, Utilities, Entertainment, Clothing, or Others. If you can derive the currency, return it back in ISO 4217 format, return null. **If the user does not mention a category, leave the field blank as "All"**`,
           },
           { role: "user", content: message },
         ],
@@ -145,55 +159,59 @@ export async function POST(req: NextRequest) {
       const parsedQuery = JSON.parse(
         queryCompletion.choices[0]?.message?.content || "{}"
       );
-      const queryData = {
+      const startDate =
+        parsedQuery?.start_date || new Date().toISOString().slice(0, 8) + "01";
+      const endDate = parsedQuery?.end_date || new Date().toISOString();
+      const category = parsedQuery?.category || null;
+      console.log("@@@ QUERY PARAMS", {
         user_id,
-        category: parsedQuery?.category || undefined,
-        start_date:
-          parsedQuery?.start_date ||
-          new Date().toISOString().slice(0, 8) + "01",
-        end_date: parsedQuery?.end_date || new Date().toISOString(),
-      };
-
-      const url = new URL("/api/expenses/web", req.nextUrl.origin);
-      url.searchParams.append("user_id", user_id);
-      url.searchParams.append("start_date", queryData.start_date);
-      url.searchParams.append("end_date", queryData.end_date);
-      if (queryData.category !== "all categories") {
-        url.searchParams.append("category", queryData.category);
-      }
-
-      const apiResponse = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        startDate,
+        endDate,
+        category,
       });
 
-      const data = await apiResponse.json();
-      const totalAmount = data.reduce(
-        (sum: number, expense: Expense) => sum + expense.amount,
-        0
-      );
-      const reply = `Total spending from ${queryData.start_date} to ${
-        queryData.end_date
-      } ${
-        queryData.category !== "all categories"
-          ? `on ${queryData.category}`
-          : ""
-      } is $${totalAmount.toFixed(2)}.`;
-
-      return NextResponse.json({ reply }, { status: 200 });
+      try {
+        // Get expenses for the period
+        const expenses = await expenseService.get(
+          user_id,
+          startDate,
+          endDate,
+          category || "All"
+        );
+        
+        // Calculate total spending
+        const totalSpending = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0);
+        
+        return NextResponse.json(
+          {
+            message: `Your total spending from ${new Date(
+              startDate
+            ).toLocaleDateString()} to ${new Date(
+              endDate
+            ).toLocaleDateString()}${
+              category ? ` for ${category}` : ""
+            } is $${totalSpending.toFixed(2)}.`,
+            action: "query",
+          },
+          { status: 200 }
+        );
+      } catch (error) {
+        console.error("Error querying expenses:", error);
+        return NextResponse.json(
+          { error: "Failed to query expenses." },
+          { status: 500 }
+        );
+      }
     }
 
-    // If intent is neither "log" nor "query"
     return NextResponse.json(
-      { reply: "I didn't understand your request. Could you clarify?" },
+      { error: "Invalid intent" },
       { status: 400 }
     );
   } catch (error) {
-    console.error("Error in Web Chat OpenAI integration route:", error);
+    console.error("Error in web message handling:", error);
     return NextResponse.json(
-      { reply: "Internal Server Error" },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

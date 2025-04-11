@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Expense } from '@/schemas/expense';
-import ExpenseEditPopup from './ExpenseEditPopup';
+import { EditExpenseDialog } from './EditExpenseDialog';
 
 interface ExpenseMessageProps {
   expense: Expense;
@@ -8,7 +8,7 @@ interface ExpenseMessageProps {
 }
 
 const ExpenseMessage: React.FC<ExpenseMessageProps> = ({ expense, onUpdate }) => {
-  const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -20,15 +20,16 @@ const ExpenseMessage: React.FC<ExpenseMessageProps> = ({ expense, onUpdate }) =>
   };
   
   const handleEditClick = () => {
-    setIsEditPopupOpen(true);
+    setIsEditDialogOpen(true);
   };
   
-  const handleClosePopup = () => {
-    setIsEditPopupOpen(false);
+  const handleCloseDialog = () => {
+    setIsEditDialogOpen(false);
   };
   
   const handleSaveExpense = async (updatedExpense: Expense) => {
     await onUpdate(updatedExpense);
+    handleCloseDialog();
   };
   
   return (
@@ -58,11 +59,11 @@ const ExpenseMessage: React.FC<ExpenseMessageProps> = ({ expense, onUpdate }) =>
         </div>
       </div>
       
-      <ExpenseEditPopup
+      <EditExpenseDialog
         expense={expense}
-        isOpen={isEditPopupOpen}
-        onClose={handleClosePopup}
+        onClose={handleCloseDialog}
         onSave={handleSaveExpense}
+        open={isEditDialogOpen}
       />
     </>
   );

@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext"; // Import the AuthProvider
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Navbar from "./components/NavBar";
@@ -27,19 +28,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Toaster />
-        <AuthProvider>
-          {" "}
-          {/* Wrap the entire app with AuthProvider */}
-          <Navbar />
-          <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-[auto] pt-5">
-            {children}
-          </main>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Toaster />
+          <AuthProvider>
+            <Navbar />
+            <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-[auto] pt-5">
+              {children}
+            </main>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

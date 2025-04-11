@@ -60,7 +60,18 @@ export class SupabaseExpenseService implements IExpenseService {
       throw new Error(`Error updating expense: ${error.message}`);
     }
 
-    return { id, ...data };
+    // Fetch the updated expense
+    const { data: updatedExpense, error: fetchError } = await this.supabase
+      .from("expenses")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Error fetching updated expense: ${fetchError.message}`);
+    }
+
+    return updatedExpense as Expense;
   }
 
   async delete(id: string): Promise<void> {

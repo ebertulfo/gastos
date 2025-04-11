@@ -13,13 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, Home, BarChart2, BotIcon, Settings } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   
   return (
-    <nav className="flex justify-between items-center py-3 px-4 md:px-6 border-b shadow-sm bg-white">
-      <Link href="/" className="text-xl font-bold flex items-center gap-2">
+    <nav className="flex justify-between items-center py-3 px-4 md:px-6 border-b shadow-sm bg-background">
+      <Link href="/" className="text-xl font-bold flex items-center gap-2 text-foreground">
         <BarChart2 className="h-5 w-5" />
         <span>Spending Tracker</span>
       </Link>
@@ -27,16 +28,18 @@ const Navbar: React.FC = () => {
       {user ? (
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
-            <Link href="/expenses" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/expenses" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Expenses
             </Link>
-            <Link href="/telegram-bot" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/telegram-bot" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Telegram Bot
             </Link>
           </div>
+          
+          <ThemeToggle />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -82,6 +85,7 @@ const Navbar: React.FC = () => {
         </div>
       ) : (
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link href="/sign-in">
             <Button variant="outline" size="sm">Sign In</Button>
           </Link>
