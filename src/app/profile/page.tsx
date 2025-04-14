@@ -118,6 +118,14 @@ export default function ProfilePage() {
         throw error;
       }
 
+      // Update the user object in AuthContext with the new data
+      if (user) {
+        updateLoggedInUser({
+          ...user,
+          currency: data.currency,
+        });
+      }
+
       toast({
         title: "Success",
         description: "Your profile has been updated successfully!",

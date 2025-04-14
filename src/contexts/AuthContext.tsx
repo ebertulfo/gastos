@@ -12,6 +12,7 @@ interface ExtendedUser {
   email: string | null;
   telegram_id?: number | null;
   is_onboarded: boolean;
+  currency?: string | null;
 }
 
 interface AuthContextType {
@@ -58,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             email: supabaseUser.email || null,
             telegram_id: profile?.telegram_id || null,
             is_onboarded: profile?.is_onboarded || false,
+            currency: profile?.currency || null,
           });
         } else {
           setUser(null);

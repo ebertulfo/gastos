@@ -7,13 +7,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { Period } from "@/enums/Period";
 import { Expense, ExpenseCategory } from "@/schemas/expense";
-import { Loader2, DollarSign, CreditCard, Calendar, PieChart } from "lucide-react";
+import { Loader2, DollarSign, CreditCard, Calendar, PieChart, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 
 export default function DashboardPage() {
   useProtectedRoute();
   const { user } = useAuth();
+  const { formatAmount } = useCurrencyFormatter(); // Use our new hook
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePeriod, setActivePeriod] = useState<Period>(Period.ThisMonth);
@@ -59,6 +62,11 @@ export default function DashboardPage() {
   const topCategories = Object.entries(spendingByCategory)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
+
+  // Calculate travel expenses
+  const travelExpenses = expenses.filter(expense => expense.is_travel_expense);
+  const travelExpensesAmount = travelExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const travelExpensesCount = travelExpenses.length;
 
   // Format date safely
   const formatDate = (date: Date | string | undefined) => {
@@ -137,6 +145,30 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Travel Mode Summary - Only shown if there are travel expenses */}
+          {travelExpensesCount > 0 && (
+            <Card className="mb-8 border-dashed border-primary/50">
+              <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+                <div className="flex items-center gap-2">
+                  <Plane className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-medium">Travel Expenses</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-medium">Amount</p>
+                    <p className="text-2xl font-bold">${travelExpensesAmount.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Count</p>
+                    <p className="text-2xl font-bold">{travelExpensesCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           {/* Period Selector */}
           <div className="bg-background p-4 rounded-lg mb-8">
@@ -195,16 +227,44 @@ export default function DashboardPage() {
                   {recentTransactions.map((expense) => (
                     <div key={expense.id} className="flex items-center justify-between py-3 border-b">
                       <div className="flex items-start gap-2">
-                        <div className="bg-muted p-2 rounded">
-                          <CreditCard className="h-4 w-4" />
+                        <div className={`p-2 rounded flex items-center justify-center ${expense.is_travel_expense ? 'bg-primary/10' : 'bg-muted'}`}>
+                          {expense.is_travel_expense ? (
+                            <Plane className="h-4 w-4 text-primary" />
+                          ) : (
+                            <CreditCard className="h-4 w-4" />
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium">{expense.description}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{expense.description}</p>
+                            {expense.is_travel_expense && (
+                              <Badge variant="outline" className="text-xs">Travel</Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">{expense.category}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-destructive">-${Number(expense.amount).toFixed(2)}</p>
+                        {expense.is_travel_expense && expense.original_amount && expense.travel_currency ? (
+                          <div className="flex flex-col">
+                            <p className="font-medium text-destructive">
+                              {formatAmount(expense.amount, expense.currency || 'USD')}
+                            </p>
+                            <div className="flex items-center text-xs text-muted-foreground gap-1">
+                              <span>from</span>
+                              <span className="font-medium">{formatAmount(expense.original_amount, expense.travel_currency)}</span>
+                              {expense.exchange_rate && (
+                                <span className="text-[10px] text-primary/70">
+                                  (rate: {expense.exchange_rate.toFixed(2)})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="font-medium text-destructive">
+                            {formatAmount(expense.amount, expense.currency || 'USD')}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           {formatDate(expense.date)}
                         </p>
@@ -258,6 +318,81 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Travel Expenses Breakdown - Only shown if there are travel expenses */}
+          {travelExpensesCount > 0 && (
+            <Card className="mb-8 border-dashed border-primary/50">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Plane className="h-4 w-4 text-primary" />
+                  <CardTitle>Travel Expenses</CardTitle>
+                </div>
+                <CardDescription>Spending during Travel Mode</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Group travel expenses by currency */}
+                  {Object.entries(
+                    travelExpenses.reduce((acc, expense) => {
+                      const currency = expense.travel_currency || 'Unknown';
+                      if (!acc[currency]) acc[currency] = {
+                        totalOriginal: 0,
+                        totalConverted: 0,
+                        count: 0
+                      };
+                      acc[currency].totalOriginal += Number(expense.original_amount || expense.amount);
+                      acc[currency].totalConverted += Number(expense.amount);
+                      acc[currency].count += 1;
+                      return acc;
+                    }, {} as Record<string, {totalOriginal: number, totalConverted: number, count: number}>)
+                  ).map(([currency, data]) => (
+                    <div key={currency} className="border-b pb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{currency}</Badge>
+                          <span>Total spent in {currency}</span>
+                        </div>
+                        <span className="font-medium">
+                          {formatAmount(data.totalOriginal, currency)}
+                        </span>
+                      </div>
+                      
+                      {/* <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Equivalent in home currency</span>
+                        <span className="font-medium">
+                          {formatAmount(data.totalConverted, 'USD')}
+                        </span>
+                      </div> */}
+                      
+                      <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                        <span>Number of expenses</span>
+                        <span>{data.count}</span>
+                      </div>
+                      
+                      {data.totalOriginal > 0 && data.totalConverted > 0 && (
+                        <div className="flex justify-between items-center text-xs text-primary/70 mt-1">
+                          <span>Average exchange rate</span>
+                          <span>1 USD ≈ {(data.totalOriginal / data.totalConverted).toFixed(2)} {currency}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Summary of all travel expenses */}
+                  {travelExpenses.length > 0 && (
+                    <div className="mt-4 pt-2 border-t">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Total in home currency</span>
+                        <span className="font-bold">
+                          {formatAmount(travelExpensesAmount, 'USD')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </main>

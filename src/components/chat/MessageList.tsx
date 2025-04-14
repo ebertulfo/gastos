@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { Message } from "./types";
 import { MessageItem } from "./MessageItem";
 import { ChatMessageService } from "@/services/ChatMessageService";
+import { Loader2 } from "lucide-react"; // Import the loader icon
 
 interface MessageListProps {
   messages: Message[];
@@ -10,6 +11,7 @@ interface MessageListProps {
   hasMoreMessages: boolean;
   isLoadingMore: boolean;
   loadMoreMessages: () => Promise<void>;
+  isProcessing?: boolean; // Add isProcessing prop
 }
 
 export function MessageList({ 
@@ -18,7 +20,8 @@ export function MessageList({
   getChatService,
   hasMoreMessages,
   isLoadingMore,
-  loadMoreMessages 
+  loadMoreMessages,
+  isProcessing = false // Default to false
 }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -181,6 +184,14 @@ export function MessageList({
           getChatService={getChatService}
         />
       ))}
+      
+      {/* Processing indicator */}
+      {isProcessing && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Processing...</span>
+        </div>
+      )}
       
       {/* Anchor for auto-scrolling to the end */}
       <div ref={messagesEndRef} />

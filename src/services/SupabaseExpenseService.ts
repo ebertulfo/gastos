@@ -25,11 +25,45 @@ export class SupabaseExpenseService implements IExpenseService {
   }
 
   async create(data: Expense): Promise<Expense> {
-    const newExpense = {
-      ...data,
+    // Create a clean new expense object
+    const newExpense: Record<string, any> = {
+      description: data.description,
+      amount: data.amount,
+      category: data.category,
       date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
       created_at: new Date().toISOString(),
     };
+
+    // Add user identification
+    if (data.user_id) {
+      newExpense.user_id = data.user_id;
+    }
+    
+    if (data.telegram_user_id) {
+      newExpense.telegram_user_id = data.telegram_user_id;
+    }
+    
+    // Add currency if specified
+    if (data.currency) {
+      newExpense.currency = data.currency;
+    }
+
+    // Add travel-related fields if they exist
+    if (data.is_travel_expense !== undefined) {
+      newExpense.is_travel_expense = data.is_travel_expense;
+    }
+    
+    if (data.travel_currency) {
+      newExpense.travel_currency = data.travel_currency;
+    }
+    
+    if (data.original_amount !== undefined) {
+      newExpense.original_amount = data.original_amount;
+    }
+    
+    if (data.exchange_rate !== undefined) {
+      newExpense.exchange_rate = data.exchange_rate;
+    }
 
     const { data: createdExpense, error } = await this.supabase
       .from("expenses")
@@ -46,11 +80,40 @@ export class SupabaseExpenseService implements IExpenseService {
   }
 
   async update(id: string, data: Expense): Promise<Expense> {
-    const updateData = {
-      ...data,
+    // Create a clean update object
+    const updateData: Record<string, any> = {
+      // Always include these basic fields if they exist
+      description: data.description,
+      amount: data.amount,
+      category: data.category,
+      // Format date properly
       date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
     };
+    
+    // Add currency only if it exists in the data
+    if (data.currency) {
+      updateData.currency = data.currency;
+    }
+    
+    // Conditionally add travel mode fields only if they exist
+    if (data.is_travel_expense !== undefined) {
+      updateData.is_travel_expense = data.is_travel_expense;
+    }
+    
+    if (data.travel_currency) {
+      updateData.travel_currency = data.travel_currency;
+    }
+    
+    if (data.original_amount !== undefined) {
+      updateData.original_amount = data.original_amount;
+    }
+    
+    if (data.exchange_rate !== undefined) {
+      updateData.exchange_rate = data.exchange_rate;
+    }
 
+    console.log('SupabaseExpenseService updating with data:', updateData); // Debug log
+    
     const { error } = await this.supabase
       .from("expenses")
       .update(updateData)

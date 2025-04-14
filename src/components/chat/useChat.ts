@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTravelMode } from "@/contexts/TravelModeContext";
 import { ChatState, Message, OnboardingStep } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
@@ -36,6 +37,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
 export function useChat() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { travelMode } = useTravelMode(); // Add travel mode context
   const [state, setState] = useState<ChatState>({
     messages: [],
     isRecording: false,
@@ -320,6 +322,8 @@ export function useChat() {
         body: JSON.stringify({
           user_id: user.id,
           message: content,
+          currency: user.currency || "USD", // Pass user's currency preference
+          travel_mode: travelMode, // Pass travel mode context
         }),
       });
 
@@ -346,7 +350,7 @@ export function useChat() {
     } finally {
       setState(prev => ({ ...prev, isProcessing: false }));
     }
-  }, [user, addMessage, toast, setShowLoginDialog, getChatService]);
+  }, [user, addMessage, toast, setShowLoginDialog, getChatService, travelMode]);
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!user) {
@@ -390,6 +394,8 @@ export function useChat() {
           body: JSON.stringify({
             user_id: user.id,
             file: base64Data,
+            currency: user.currency || "USD", // Pass user's currency preference
+            travel_mode: travelMode, // Pass travel mode context
           }),
         });
 
@@ -417,7 +423,7 @@ export function useChat() {
     } finally {
       setState(prev => ({ ...prev, isProcessing: false }));
     }
-  }, [user, addMessage, toast, setShowLoginDialog, getChatService]);
+  }, [user, addMessage, toast, setShowLoginDialog, getChatService, travelMode]);
 
   const handleOnboardingSubmit = useCallback((field: string, value: string) => {
     setState(prev => {

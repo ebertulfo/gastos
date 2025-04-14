@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, Home, BarChart2, BotIcon, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TravelModeToggle } from "@/components/TravelModeToggle";
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -39,6 +40,7 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
           
+          <TravelModeToggle />
           <ThemeToggle />
           
           <DropdownMenu>

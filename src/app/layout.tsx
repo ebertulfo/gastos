@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { TravelModeProvider } from "@/contexts/TravelModeContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
@@ -40,10 +41,12 @@ export default function RootLayout({
         >
           <Toaster />
           <AuthProvider>
-            <Navbar />
-            <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-[auto] pt-5">
-              {children}
-            </main>
+            <TravelModeProvider>
+              <Navbar />
+              <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-[auto] pt-5">
+                {children}
+              </main>
+            </TravelModeProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

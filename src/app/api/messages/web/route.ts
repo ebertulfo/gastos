@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 import {
   Expense,
   OpenAIExpenseSchema,
@@ -8,7 +9,7 @@ import {
 } from "@/schemas/expense";
 import { OpenAIExpenseParser } from "@/services/OpenAIExpenseParser";
 import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { convertCurrency, getExchangeRate } from "@/lib/helpers/currency-exchange";
 
 export async function POST(req: NextRequest) {
   // Initialize OpenAI
@@ -17,9 +18,10 @@ export async function POST(req: NextRequest) {
   });
   try {
     const expenseParser = new OpenAIExpenseParser(openai);
-    const { user_id, message, file } = await req.json();
+    const { user_id, message, file, currency, travel_mode } = await req.json();
 
     console.log("Received request with user_id:", user_id);
+    console.log("Travel mode data:", travel_mode);
 
     if (!user_id) {
       return NextResponse.json(
@@ -41,7 +43,11 @@ export async function POST(req: NextRequest) {
     
     // Create expense service with auth token
     const expenseService = new SupabaseExpenseService(authToken);
-
+    
+    // Use the currency provided from frontend or default to USD
+    const userCurrency = currency || "USD";
+    console.log("User's currency:", userCurrency);
+    
     // If file is provided, automatically consider it as a log intent.
     let intent = "log";
     let fileBuffer;
@@ -113,7 +119,44 @@ export async function POST(req: NextRequest) {
         ...parsedExpense,
         user_id: user_id,
         date: new Date().toISOString(),
+        // Use the user's preferred currency from the request
+        currency: parsedExpense.currency || userCurrency,
       };
+      
+      // Apply travel mode data if travel mode is enabled
+      if (travel_mode && travel_mode.isEnabled) {
+        // In travel mode:
+        // - original_amount should be the amount in travel currency (what the user entered)
+        // - amount should be the converted value in home currency
+        // - travel_currency is the currency used while traveling
+        // - currency remains the user's home currency
+        expenseData.is_travel_expense = true;
+        expenseData.travel_currency = travel_mode.travelCurrency;
+        expenseData.original_amount = expenseData.amount;
+        
+        // IMPORTANT: Make sure we're using the user's home currency, not the travel currency
+        // This ensures the currency is always set to the user's preferred currency
+        expenseData.currency = userCurrency;
+        
+        // Calculate exchange rate and convert the amount to home currency
+        if (expenseData.travel_currency !== expenseData.currency) {
+          // Use our currency exchange utility to convert the amount
+          expenseData.amount = convertCurrency(
+            expenseData.original_amount,
+            expenseData.travel_currency,
+            expenseData.currency
+          );
+          
+          // Store the exchange rate
+          expenseData.exchange_rate = getExchangeRate(
+            expenseData.travel_currency,
+            expenseData.currency
+          );
+        } else {
+          // If currencies are the same, exchange rate is 1:1
+          expenseData.exchange_rate = 1;
+        }
+      }
 
       try {
         const newExpense = await expenseService.create(expenseData);
@@ -138,6 +181,16 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Handle Expense Querying
     if (intent === "query") {
+      // Create a modified schema without default values for OpenAI
+      const openAIFriendlySchema = QueryExpenseSchema.extend({
+        // Override any fields with defaults to remove them
+        start_date: z.string().optional(),
+        end_date: z.string().optional(),
+        category: z.enum(["All", "Food", "Transportation", "Utilities", "Entertainment", "Others"]),
+        // Remove telegram_user_id requirement as we're using user_id
+        telegram_user_id: z.string().optional(),
+      });
+
       const queryCompletion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -148,11 +201,11 @@ export async function POST(req: NextRequest) {
               .slice(
                 0,
                 10
-              )}. Extract the start_date and end_date for the query from the user's input. Only include a category if the user explicitly specifies one from Food, Transportation, Utilities, Entertainment, Clothing, or Others. If you can derive the currency, return it back in ISO 4217 format, return null. **If the user does not mention a category, leave the field blank as "All"**`,
+              )}. Extract the start_date and end_date for the query from the user's input. Only include a category if the user explicitly specifies one from Food, Transportation, Utilities, Entertainment, Clothing, or Others. **If the user does not mention a category, return "All"**`,
           },
           { role: "user", content: message },
         ],
-        response_format: zodResponseFormat(QueryExpenseSchema, "expense_query"),
+        response_format: zodResponseFormat(openAIFriendlySchema, "expense_query"),
       });
 
       console.log("@@@ QUERY COMPLETION", queryCompletion.choices[0]?.message);
@@ -215,4 +268,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -52,6 +52,7 @@ export function ChatUI() {
             hasMoreMessages={hasMoreMessages}
             isLoadingMore={isLoadingMore}
             loadMoreMessages={loadMoreMessages}
+            isProcessing={state.isProcessing}
           />
         </div>
       )}

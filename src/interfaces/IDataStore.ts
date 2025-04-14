@@ -1,14 +1,15 @@
+import { Spending as SpendingType } from '@/schemas/expense';
+
 export interface DataStore {
-  addSpending(data: Spending): Promise<void>;
-  getSpendings(): Promise<Spending[]>;
+  addSpending(data: SpendingType): Promise<void>;
+  getSpendings(): Promise<SpendingType[]>;
   deleteSpending(id: string): Promise<void>;
-  updateSpending(id: string, data: Partial<Spending>): Promise<void>;
+  updateSpending(id: string, data: Partial<SpendingType>): Promise<void>;
 }
 
-// Example Spending type
-export interface Spending {
-  id: string;
-  amount: number;
-  category: string;
-  date: string;
-}
+// Re-export the Spending type from our central schema
+export type Spending = SpendingType;
+
+/**
+ * @deprecated Import Spending type from '@/schemas/expense' instead
+ */

@@ -1,4 +1,6 @@
 // src/types/responses.ts
+import { ParsedExpense as ParsedExpenseType } from '@/schemas/expense';
+
 export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -6,9 +8,9 @@ export interface APIResponse<T = unknown> {
   message?: string;
 }
 
-export interface ParsedExpense {
-  amount: number;
-  category: string;
-  description: string;
-  date?: string;
-}
+// Re-export ParsedExpense from our central schema file
+export type ParsedExpense = ParsedExpenseType;
+
+/**
+ * @deprecated Import ParsedExpense from '@/schemas/expense' instead
+ */

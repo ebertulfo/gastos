@@ -1,14 +1,17 @@
 import { Expense, ExpenseCategory } from "@/schemas/expense";
-import { Firestore } from "firebase/firestore";
 
+/**
+ * Interface for expense service implementations
+ * Provides a consistent API across different database backends
+ */
 export interface IExpenseService {
-  create(data: Expense, firestore: Firestore): Promise<Expense>;
+  create(data: Expense): Promise<Expense>;
   update(id: string, data: Expense): Promise<Expense>;
   delete(id: string): Promise<void>;
   get(
     user_id: string,
-    startDate: string,
-    endDate: string,
-    category: ExpenseCategory
+    startDate: string | null,
+    endDate: string | null,
+    category: ExpenseCategory | "All"
   ): Promise<Expense[]>;
 }

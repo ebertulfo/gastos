@@ -71,18 +71,30 @@ export const updateExpense = async (
   updatedExpense: Partial<Expense>
 ) => {
   try {
-    // Format the date if it exists
+    // Create a clean update object with all fields to ensure nothing is lost
     const updateData = { ...updatedExpense };
+    
+    // Format the date if it exists
     if (updateData.date) {
       updateData.date = new Date(updateData.date).toISOString();
     }
-
+    
+    // Ensure currency is preserved even if it's an empty string
+    if (updateData.currency === '') {
+      updateData.currency = 'USD'; // Default to USD if empty
+    }
+    
+    console.log('Updating expense with data:', updateData); // Debug log
+    
     const { error } = await supabase
       .from("expenses")
       .update(updateData)
       .eq("id", expenseId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase update error:', error);
+      throw error;
+    }
     return true;
   } catch (error) {
     console.error("Error updating expense: ", error);

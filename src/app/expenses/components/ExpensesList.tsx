@@ -9,6 +9,8 @@ import { Period } from "@/types";
 import { Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { ConfirmExpenseDialog } from "./ConfirmExpenseDialog";
+import { Badge } from "@/components/ui/badge";
+import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 
 interface ExpenseListProps {
   period: Period;
@@ -16,6 +18,7 @@ interface ExpenseListProps {
 
 const ExpenseList: React.FC<ExpenseListProps> = ({ period }) => {
   const { user } = useAuth();
+  const { formatAmount } = useCurrencyFormatter(); // Use our new hook
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -97,7 +100,22 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ period }) => {
               </CardHeader>
               <CardContent>
                 <div className="mb-2">
-                  <strong>Amount:</strong> ${expense.amount}
+                  <strong>Amount:</strong>{" "}
+                  {expense.is_travel_expense ? (
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        {formatAmount(expense.amount || 0, expense.currency || 'USD')}
+                        <Badge variant="outline" className="text-xs">Home Currency</Badge>
+                      </div>
+                      {expense.original_amount && expense.travel_currency && (
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Originally {formatAmount(expense.original_amount, expense.travel_currency)}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    formatAmount(expense.amount || 0, expense.currency || 'USD')
+                  )}
                 </div>
                 <div className="mb-2">
                   <strong>Category:</strong> {expense.category}

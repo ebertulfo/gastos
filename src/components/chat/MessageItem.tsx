@@ -2,7 +2,7 @@ import { Message } from "./types";
 import { User, Bot as BotIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
-import ExpenseMessage from "../ExpenseMessage";
+import ExpenseMessage from "@/components/ExpenseMessage";
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessageService } from "@/services/ChatMessageService";
 import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
@@ -14,9 +14,15 @@ interface MessageItemProps {
   message: Message;
   updateMessageInState: (message: Message) => void;
   getChatService: () => Promise<ChatMessageService | null>;
+  removeMessageFromState?: (messageId: string) => void;
 }
 
-export function MessageItem({ message, updateMessageInState, getChatService }: MessageItemProps) {
+export function MessageItem({ 
+  message, 
+  updateMessageInState, 
+  getChatService,
+  removeMessageFromState 
+}: MessageItemProps) {
   const isUser = message.role === "user";
   const Icon = isUser ? User : BotIcon;
   const { toast } = useToast();
@@ -67,6 +73,57 @@ export function MessageItem({ message, updateMessageInState, getChatService }: M
     }
   }, [message.id, updateMessageInState, getChatService, toast]);
 
+  const handleExpenseDelete = useCallback(async (expenseId: string) => {
+    try {
+      // Get the auth token from the cached chat service
+      const chatService = await getChatService();
+      if (!chatService) {
+        throw new Error("Failed to initialize chat service");
+      }
+      
+      // Use a single auth request for both services
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || undefined;
+      
+      const expenseService = new SupabaseExpenseService(authToken);
+      
+      // Delete the expense from the database
+      await expenseService.delete(expenseId);
+      
+      // Remove or update the message
+      if (message.id) {
+        if (removeMessageFromState) {
+          // If we can remove messages, simply remove this one
+          removeMessageFromState(message.id);
+          
+          // Also delete the message from the database
+          await chatService.deleteMessage(message.id);
+        } else {
+          // Otherwise, update the message to no longer reference the expense
+          const updatedMessage = await chatService.updateMessage(message.id, {
+            expense: undefined,
+            content: "Expense has been deleted."
+          });
+          
+          // Update the message in the local state
+          updateMessageInState(updatedMessage);
+        }
+      }
+      
+      toast({
+        title: "Expense deleted",
+        description: "Your expense has been deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete expense. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [message.id, updateMessageInState, removeMessageFromState, getChatService, toast]);
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div className={`flex items-start gap-2 max-w-[80%] ${isUser ? "flex-row-reverse" : "flex-row"}`}>
@@ -86,7 +143,11 @@ export function MessageItem({ message, updateMessageInState, getChatService }: M
           )}
           
           {message.expense ? (
-            <ExpenseMessage expense={message.expense} onUpdate={handleExpenseUpdate} />
+            <ExpenseMessage 
+              expense={message.expense} 
+              onUpdate={handleExpenseUpdate}
+              onDelete={handleExpenseDelete}
+            />
           ) : (
             <p className="whitespace-pre-wrap">{message.content}</p>
           )}
