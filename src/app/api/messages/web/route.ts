@@ -143,14 +143,14 @@ export async function POST(req: NextRequest) {
           // Use our currency exchange utility to convert the amount
           expenseData.amount = convertCurrency(
             expenseData.original_amount,
-            expenseData.travel_currency,
-            expenseData.currency
+            expenseData.travel_currency || userCurrency,
+            expenseData.currency || userCurrency
           );
           
           // Store the exchange rate
           expenseData.exchange_rate = getExchangeRate(
-            expenseData.travel_currency,
-            expenseData.currency
+            expenseData.travel_currency || userCurrency,
+            expenseData.currency || userCurrency
           );
         } else {
           // If currencies are the same, exchange rate is 1:1

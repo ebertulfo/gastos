@@ -64,9 +64,6 @@ export function ExpenseDialog({
     currency: user?.currency || "USD", // Default to user's currency
   });
 
-  // For displaying the equivalent amount in user's default currency
-  const [equivalentAmount, setEquivalentAmount] = useState<number | null>(null);
-  
   // Get the user's preferred currency from AuthContext, with USD as fallback
   const DEFAULT_CURRENCY = user?.currency || "USD";
 
@@ -77,37 +74,13 @@ export function ExpenseDialog({
         ...expenseData,
         // Ensure date is formatted as YYYY-MM-DD for input
         date: typeof expenseData.date === 'object' && expenseData.date !== null
-          ? new Date(expenseData.date as any).toISOString().split('T')[0]
+          ? new Date(expenseData.date as Date).toISOString().split('T')[0]
           : typeof expenseData.date === 'string'
             ? new Date(expenseData.date).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0],
       });
     }
   }, [expenseData]);
-
-  // Calculate equivalent amount when in travel mode
-  useEffect(() => {
-    if (travelMode.isEnabled && travelMode.travelCurrency && expense.amount) {
-      const amount = Number(expense.amount);
-      
-      // Skip conversion if travel currency is the same as user's default currency
-      if (travelMode.travelCurrency === DEFAULT_CURRENCY) {
-        setEquivalentAmount(null);
-        return;
-      }
-      
-      // Convert from travel currency to home currency
-      const converted = convertCurrency(
-        amount,
-        travelMode.travelCurrency,
-        DEFAULT_CURRENCY
-      );
-      
-      setEquivalentAmount(converted);
-    } else {
-      setEquivalentAmount(null);
-    }
-  }, [expense.amount, travelMode.isEnabled, travelMode.travelCurrency, DEFAULT_CURRENCY]);
 
   // Add a new useEffect to convert original_amount to amount when it changes in travel mode
   useEffect(() => {
@@ -303,7 +276,9 @@ export function ExpenseDialog({
                   onChange={handleAmountChange}
                   className="flex-1"
                 />
-                
+                <Badge variant="outline">
+                  {expense.currency || DEFAULT_CURRENCY}
+                </Badge>
               </div>
             </div>
             

@@ -87,7 +87,7 @@ export default function Onboarding() {
   }, [form]);
 
   const handleFieldChange = (field: string, value: string) => {
-    form.setValue(field as any, value);
+    form.setValue(field as keyof OnboardingFormValues, value);
     localStorage.setItem(field, value);
   };
 
@@ -114,7 +114,7 @@ export default function Onboarding() {
       const { error } = await supabase
         .from("user_profiles")
         .upsert({
-          id: user.id,
+          id: user.uid,
           full_name: data.name,
           country: data.country,
           currency: data.currency,
@@ -140,11 +140,11 @@ export default function Onboarding() {
 
       // Redirect to dashboard
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile",
+        description: error instanceof Error ? error.message : "Failed to update profile",
         variant: "destructive",
       });
     } finally {

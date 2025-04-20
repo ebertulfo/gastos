@@ -17,7 +17,7 @@ export function getSupabaseAdmin() {
 
 export async function isUserAuthenticated() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = getSupabaseAdmin();
     
     // Get the session from cookies
@@ -44,7 +44,7 @@ export async function isUserAuthenticated() {
 
 export async function getCurrentUser() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = getSupabaseAdmin();
     
     // Get the session from cookies
@@ -73,10 +73,8 @@ export async function revokeAllSessions(user_id: string) {
     const supabase = getSupabaseAdmin();
     
     // Sign out from all devices
-    const { error } = await supabase.auth.admin.signOut({
-      user_id: user_id,
-      scope: 'global'
-    });
+    // Updated to use the correct admin API format
+    const { error } = await supabase.auth.admin.deleteUser(user_id, true);
     
     if (error) {
       console.error("Error revoking sessions:", error);

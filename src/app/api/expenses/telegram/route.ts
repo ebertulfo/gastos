@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
-import { ExpenseSchema, Expense, ExpenseCategory } from "@/schemas/expense";
+import { ExpenseCategory, ExpenseSchema } from "@/schemas/expense";
 
 export async function GET(req: NextRequest) {
   try {
@@ -67,4 +67,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

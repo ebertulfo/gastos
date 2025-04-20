@@ -10,7 +10,7 @@ import { useState } from "react";
 export default function TelegramBotPage() {
   const { user } = useProtectedRoute();
   console.log("@@@ SOKPA", user);
-  const [isLinked, setIsLinked] = useState(user?.telegramLinked);
+  const [isLinked, setIsLinked] = useState(user?.telegram_id ? true : false);
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
 

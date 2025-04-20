@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
+import Link from "next/link";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -106,7 +107,7 @@ const SignInForm: React.FC = () => {
     try {
       setLoading(true);
 
-      const { error, data } = await supabase.auth.verifyOtp({
+      const { error } = await supabase.auth.verifyOtp({
         email,
         token: values.otp,
         type: "email",
@@ -231,7 +232,7 @@ const SignInForm: React.FC = () => {
               </Form>
               <div className="text-center mt-4">
                 <p className="text-sm text-muted-foreground mb-2">
-                  Didn't receive the code?
+                  Didn&apos;t receive the code?
                 </p>
                 <Button
                   variant="outline"
@@ -255,8 +256,22 @@ const SignInForm: React.FC = () => {
           )}
         </CardContent>
         <CardFooter className="flex flex-col">
-          <p className="text-xs text-muted-foreground text-center mt-4">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
+          <p className="px-8 text-center text-sm text-muted-foreground">
+            By clicking continue, you agree to our{" "}
+            <Link
+              href="#"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="#"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Privacy Policy
+            </Link>
+            .
           </p>
         </CardFooter>
       </Card>

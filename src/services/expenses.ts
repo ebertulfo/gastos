@@ -1,39 +1,151 @@
 import { IExpenseService } from "@/interfaces/IExpenseService";
 import { Expense, ExpenseCategory } from "@/schemas/expense";
-import { Firestore, Timestamp } from "firebase-admin/firestore";
+import { createClient } from "@supabase/supabase-js";
 
+// This file is kept for compatibility but delegates to the SupabaseExpenseService
+// For new code, please use SupabaseExpenseService directly
 export class ExpenseService implements IExpenseService {
-  constructor(private firestore: Firestore) {
-    this.firestore = firestore;
+  private supabase;
+
+  constructor(authToken?: string) {
+    this.supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+        global: {
+          headers: authToken ? {
+            Authorization: `Bearer ${authToken}`
+          } : {}
+        }
+      }
+    );
   }
+
   async create(data: Expense): Promise<Expense> {
-    const newExpense = {
-      ...data,
-      date: data.date
-        ? Timestamp.fromDate(new Date(data.date))
-        : Timestamp.now(),
-      created_at: Timestamp.fromDate(new Date()),
+    // Create a clean new expense object
+    const newExpense: Record<string, string | number | boolean | null> = {
+      description: data.description ?? '',
+      amount: data.amount,
+      category: data.category,
+      date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
-    const expensesRef = this.firestore.collection("expenses");
-    const doc = await expensesRef.add(newExpense);
-    return { id: doc.id, ...data };
+
+    // Add user identification
+    if (data.user_id) {
+      newExpense.user_id = data.user_id;
+    }
+    
+    if (data.telegram_user_id) {
+      newExpense.telegram_user_id = data.telegram_user_id;
+    }
+    
+    // Add currency if specified
+    if (data.currency) {
+      newExpense.currency = data.currency;
+    }
+
+    // Add travel-related fields if they exist
+    if (data.is_travel_expense !== undefined) {
+      newExpense.is_travel_expense = data.is_travel_expense;
+    }
+    
+    if (data.travel_currency) {
+      newExpense.travel_currency = data.travel_currency;
+    }
+    
+    if (data.original_amount !== undefined) {
+      newExpense.original_amount = data.original_amount;
+    }
+    
+    if (data.exchange_rate !== undefined) {
+      newExpense.exchange_rate = data.exchange_rate;
+    }
+
+    const { data: createdExpense, error } = await this.supabase
+      .from("expenses")
+      .insert(newExpense)
+      .select()
+      .single();
+
+    if (error) {
+      console.log('@@@ ERROR CREATING EXPENSE', error)
+      throw new Error(`Error creating expense: ${error.message}`);
+    }
+
+    return createdExpense as Expense;
   }
 
   async update(id: string, data: Expense): Promise<Expense> {
-    const expensesRef = this.firestore.collection("expenses");
+    // Create a clean update object
+    const updateData: Record<string, string | number | boolean | null> = {
+      // Always include these basic fields if they exist
+      description: data.description ?? '',
+      amount: data.amount,
+      category: data.category,
+      // Format date properly
+      date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+    };
+    
+    // Add currency only if it exists in the data
+    if (data.currency) {
+      updateData.currency = data.currency;
+    }
+    
+    // Conditionally add travel mode fields only if they exist
+    if (data.is_travel_expense !== undefined) {
+      updateData.is_travel_expense = data.is_travel_expense;
+    }
+    
+    if (data.travel_currency) {
+      updateData.travel_currency = data.travel_currency;
+    }
+    
+    if (data.original_amount !== undefined) {
+      updateData.original_amount = data.original_amount;
+    }
+    
+    if (data.exchange_rate !== undefined) {
+      updateData.exchange_rate = data.exchange_rate;
+    }
+    
+    const { error } = await this.supabase
+      .from("expenses")
+      .update(updateData)
+      .eq("id", id);
 
-    await expensesRef.doc(id).update({
-      ...data,
-      date: data.date
-        ? Timestamp.fromDate(new Date(data.date))
-        : Timestamp.now(),
-    });
-    return { id, ...data };
+    if (error) {
+      throw new Error(`Error updating expense: ${error.message}`);
+    }
+
+    // Fetch the updated expense
+    const { data: updatedExpense, error: fetchError } = await this.supabase
+      .from("expenses")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Error fetching updated expense: ${fetchError.message}`);
+    }
+
+    return updatedExpense as Expense;
   }
 
   async delete(id: string): Promise<void> {
-    const expensesRef = this.firestore.collection("expenses");
-    await expensesRef.doc(id).delete();
+    const { error } = await this.supabase
+      .from("expenses")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw new Error(`Error deleting expense: ${error.message}`);
+    }
   }
 
   async get(
@@ -49,30 +161,40 @@ export class ExpenseService implements IExpenseService {
       endDate,
       category
     );
-    const expensesRef = this.firestore.collection("expenses");
-    let query = expensesRef.where("user_id", "==", user_id);
+    
+    let query = this.supabase
+      .from("expenses")
+      .select("*")
+      .eq("user_id", user_id);
 
     // Apply date filters if startDate and/or endDate are provided
     if (startDate) {
-      const start = Timestamp.fromDate(new Date(startDate));
-      query = query.where("date", ">=", start);
+      query = query.gte("date", startDate);
     }
+    
     if (endDate) {
-      const end = Timestamp.fromDate(
-        new Date(new Date(endDate).setHours(23, 59, 59, 999))
-      );
-      query = query.where("date", "<=", end);
+      // Add time to end date for inclusive range
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.lte("date", endOfDay.toISOString());
     }
 
     // Apply category filter if provided
     if (category && category !== "All") {
-      query = query.where("category", "==", category);
+      query = query.eq("category", category);
     }
 
-    const snapshot = await query.get();
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    const { data, error } = await query.order("date", { ascending: false });
+
+    if (error) {
+      throw new Error(`Error fetching expenses: ${error.message}`);
+    }
+
+    return (data || []).map(expense => ({
+      ...expense,
+      // Convert ISO strings to Date objects if needed for consistency
+      date: expense.date ? new Date(expense.date) : null,
+      created_at: expense.created_at ? new Date(expense.created_at) : null,
     })) as Expense[];
   }
 }

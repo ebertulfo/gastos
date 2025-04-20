@@ -39,6 +39,10 @@ create table if not exists public.expenses (
   telegram_user_id text
 );
 
+-- Add exchange_rate column to expenses table
+alter table public.expenses
+add column if not exists exchange_rate numeric;
+
 -- Enable RLS on expenses
 alter table public.expenses enable row level security;
 

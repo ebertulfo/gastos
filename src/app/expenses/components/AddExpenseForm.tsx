@@ -23,7 +23,6 @@ const AddExpenseDialog: React.FC = () => {
     ExpenseCategory.Others
   );
   const [date, setDate] = useState("");
-  const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [expenseData, setExpenseData] = useState<Partial<Expense>>({});
@@ -38,7 +37,7 @@ const AddExpenseDialog: React.FC = () => {
       amount: amount ? parseFloat(amount) : 0,
       category,
       date: date ? new Date(date) : new Date(),
-      user_id: user.id,
+      user_id: user.uid,
     };
 
     // Set the expense data and open confirmation dialog
@@ -98,8 +97,8 @@ const AddExpenseDialog: React.FC = () => {
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
-            <Button type="submit" disabled={loading}>
-              {loading ? "Processing..." : "Review Expense"}
+            <Button type="submit">
+              Review Expense
             </Button>
           </form>
         </DialogContent>

@@ -20,10 +20,10 @@ const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   
   return (
-    <nav className="flex justify-between items-center py-3 px-4 md:px-6 border-b shadow-sm bg-background">
+    <nav className="sticky top-0 z-50 flex justify-between items-center py-3 px-4 md:px-6 border-b shadow-sm bg-background">
       <Link href="/" className="text-xl font-bold flex items-center gap-2 text-foreground">
-        <BarChart2 className="h-5 w-5" />
-        <span>Spending Tracker</span>
+        
+        <span>Gasto$</span>
       </Link>
       
       {user ? (

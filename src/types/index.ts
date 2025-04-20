@@ -1,10 +1,10 @@
-import { Periods } from "@/enums/Period";
+import { Period as EPeriod } from "@/enums/Period";
 
 export type APIResponse<T = object> =
   | { success: true; data: T }
   | { success: false; error: string };
 
-export type Period = `${Periods}`;
+export type Period = `${EPeriod}`;
 
 export type DateRange = {
   start: Date;

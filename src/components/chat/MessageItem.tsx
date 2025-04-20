@@ -9,19 +9,24 @@ import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
 import { supabase } from "@/lib/supabase";
 import { Expense } from "@/schemas/expense";
 import { useCallback } from "react";
+import Image from "next/image";
 
 interface MessageItemProps {
   message: Message;
   updateMessageInState: (message: Message) => void;
   getChatService: () => Promise<ChatMessageService | null>;
   removeMessageFromState?: (messageId: string) => void;
+  'data-message-id'?: string; // Add support for data-message-id attribute
+  onClick?: () => void; // Add onClick prop for handling message clicks
 }
 
 export function MessageItem({ 
   message, 
   updateMessageInState, 
   getChatService,
-  removeMessageFromState 
+  removeMessageFromState,
+  'data-message-id': dataMessageId, // Destructure the data attribute
+  ...props // Capture any other props
 }: MessageItemProps) {
   const isUser = message.role === "user";
   const Icon = isUser ? User : BotIcon;
@@ -125,19 +130,26 @@ export function MessageItem({
   }, [message.id, updateMessageInState, removeMessageFromState, getChatService, toast]);
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div className={`flex items-start gap-2 max-w-[80%] ${isUser ? "flex-row-reverse" : "flex-row"}`}>
-        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+    <div 
+      className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}
+      data-message-id={dataMessageId || message.id} // Apply the data attribute
+      {...props} // Pass through any other props
+    >
+      <div className={`flex items-start gap-3 max-w-[85%] ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
           <Icon className="w-5 h-5 text-primary" />
         </div>
         
-        <Card className={`p-3 ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+        <Card className={`p-4 ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"} ${message.action === "onboarding" ? "cursor-pointer hover:bg-accent transition-colors" : ""} shadow-sm`}
+          onClick={message.action === "onboarding" ? props.onClick : undefined}>
           {message.attachmentUrl && (
-            <div className="mb-2">
-              <img
+            <div className="mb-3">
+              <Image
                 src={message.attachmentUrl}
                 alt="Attachment"
                 className="max-w-full rounded-md"
+                width={500}
+                height={500}
               />
             </div>
           )}
@@ -149,10 +161,17 @@ export function MessageItem({
               onDelete={handleExpenseDelete}
             />
           ) : (
-            <p className="whitespace-pre-wrap">{message.content}</p>
+            <div className="space-y-2">
+              <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              {message.action === "onboarding" && (
+                <div className="mt-3 text-xs font-medium inline-block px-2 py-1 bg-primary/10 text-primary rounded-md">
+                  Click to login →
+                </div>
+              )}
+            </div>
           )}
           
-          <span className="text-xs opacity-70 mt-1 block">
+          <span className="text-xs opacity-70 mt-3 block">
             {formatDistanceToNow(message.timestamp, { addSuffix: true })}
           </span>
         </Card>

@@ -1,7 +1,7 @@
 "use client";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BarChart2, Bot, Clock, CreditCard, Smartphone } from "lucide-react";
 

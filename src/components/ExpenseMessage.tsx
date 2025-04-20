@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Expense } from '@/schemas/expense';
 import { ExpenseDialog } from './ExpenseDialog';
 import { Badge } from './ui/badge';
-import { ArrowDownIcon } from 'lucide-react';
+import { ArrowDownIcon, PencilIcon, PlaneIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrencyFormatter } from '@/hooks/useCurrencyFormatter';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ExpenseMessageProps {
   expense: Expense;
@@ -19,8 +20,8 @@ const ExpenseMessage: React.FC<ExpenseMessageProps> = ({ expense, onUpdate, onDe
   const { formatAmount } = useCurrencyFormatter(); // Use our new hook
   const { toast } = useToast();
   
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateInput: string | Date) => {
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -76,7 +77,7 @@ const ExpenseMessage: React.FC<ExpenseMessageProps> = ({ expense, onUpdate, onDe
       const userCurrency = expense.currency || user?.currency || 'USD';
       
       return (
-        <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-1.5 rounded border border-blue-100">
+        <div className="mt-3 text-xs text-blue-600 bg-blue-50 p-2.5 rounded-md border border-blue-100">
           <div className="flex items-center justify-between">
             <span>
               <strong>1 {userCurrency}</strong> = <strong>{(1/rate).toFixed(4)} {expense.travel_currency}</strong>
@@ -94,52 +95,72 @@ const ExpenseMessage: React.FC<ExpenseMessageProps> = ({ expense, onUpdate, onDe
   return (
     <>
       <div 
-        className="bg-blue-50 p-4 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+        className="bg-blue-50 p-5 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors shadow-sm"
         onClick={handleEditClick}
       >
-        <div className="flex justify-between items-center">
-          <div className="font-semibold text-blue-800">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2.5">
+          {/* Left side - Amount and Category */}
+          <div className="font-medium text-blue-800 space-y-1.5">
             {expense.is_travel_expense ? (
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  {formatAmount(expense.original_amount || expense.amount, expense.travel_currency)}
-                  <Badge variant="outline" className="text-xs">Travel</Badge>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg font-semibold">
+                    {formatAmount(expense.original_amount || expense.amount, expense.travel_currency)}
+                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="text-xs py-1 px-2 bg-blue-100 flex items-center">
+                          <PlaneIcon className="h-3 w-3 mr-0.5" />
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Spent during Travel</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
+                
                 {/* Only show conversion if travel currency is different from home currency */}
                 {expense.travel_currency !== (expense.currency || user?.currency || 'USD') && (
-                  <div className="flex items-center text-xs text-blue-500 mt-1">
-                    <ArrowDownIcon className="h-3 w-3 mr-1 text-blue-400" />
-                    {formatAmount(expense.amount, expense.currency || user?.currency || 'USD')} in home currency
+                  <div className="flex items-center text-sm text-blue-600 mt-1">
+                    <ArrowDownIcon className="h-3.5 w-3.5 mr-1.5 text-blue-500" />
+                    <span className="font-medium">{formatAmount(expense.amount, expense.currency || user?.currency || 'USD')}</span> 
+                    <span className="ml-1.5 text-blue-500">in home currency</span>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                {formatAmount(expense.amount, expense.currency || user?.currency || 'USD')}
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg font-semibold">
+                  {formatAmount(expense.amount, expense.currency || user?.currency || 'USD')}
+                </span>
                 {expense.category && (
-                  <Badge variant="secondary" className="text-xs">{expense.category}</Badge>
+                  <Badge variant="secondary" className="text-xs py-1 px-2">{expense.category}</Badge>
                 )}
               </div>
             )}
           </div>
-          <div className="text-sm text-blue-600">
+          
+          {/* Right side - Date */}
+          <div className="text-sm font-medium text-blue-600 bg-blue-100/50 px-3 py-1.5 rounded-md">
             {expense.date ? formatDate(expense.date) : 'No date'}
           </div>
         </div>
         
+        {/* Description - Only shown if available */}
         {expense.description && (
-          <div className="mt-2 text-blue-700">
+          <div className="mt-3 text-blue-700 bg-white/70 p-2.5 rounded-md">
             {expense.description}
           </div>
         )}
         
-        {/* Display exchange rate information */}
+        {/* Exchange rate information */}
         {renderExchangeRate()}
         
-        <div className="mt-2 text-xs text-blue-500 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
+        {/* Edit hint at bottom */}
+        <div className="mt-4 text-xs text-blue-500 flex items-center border-t border-blue-100 pt-2">
+          <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
           Click to edit
         </div>
       </div>

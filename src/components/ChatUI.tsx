@@ -1,15 +1,13 @@
-import { useState } from "react";
 import { useChat } from "./chat/useChat";
 import { MessageList } from "./chat/MessageList";
 import { ChatInput } from "./chat/ChatInput";
 import { OnboardingDialog } from "./chat/OnboardingDialog";
 import { LoginDialog } from "./LoginDialog";
-import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { useCallback } from "react";
+import { Message } from "./chat/types";
 
 export function ChatUI() {
-  const { user } = useAuth();
   const {
     state,
     handleSendMessage,
@@ -37,32 +35,44 @@ export function ChatUI() {
     ? ONBOARDING_STEPS[state.currentStep] 
     : undefined;
 
+  // Handle clicks on messages that should open the login dialog
+  const handleMessageClick = useCallback((message: Message) => {
+    if (message.action === "onboarding") {
+      setShowLoginDialog(true);
+    }
+  }, [setShowLoginDialog]);
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full max-w-[640px] mx-auto">
       {isLoading ? (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center h-full w-full">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="flex-grow overflow-hidden flex flex-col">
-          <MessageList 
-            messages={state.messages} 
-            updateMessageInState={updateMessageInState}
-            getChatService={getChatService}
-            hasMoreMessages={hasMoreMessages}
-            isLoadingMore={isLoadingMore}
-            loadMoreMessages={loadMoreMessages}
-            isProcessing={state.isProcessing}
-          />
+        <div className="flex flex-col h-full">
+          <div className="flex-1 overflow-auto">
+            <MessageList 
+              messages={state.messages} 
+              updateMessageInState={updateMessageInState}
+              getChatService={getChatService}
+              hasMoreMessages={hasMoreMessages}
+              isLoadingMore={isLoadingMore}
+              loadMoreMessages={loadMoreMessages}
+              isProcessing={state.isProcessing}
+              onMessageClick={handleMessageClick}
+            />
+          </div>
+          <div className="sticky bottom-0 z-10 bg-background border-t shadow-sm">
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              onFileUpload={handleFileUpload}
+              isRecording={state.isRecording}
+              onToggleRecording={toggleRecording}
+              isProcessing={state.isProcessing}
+            />
+          </div>
         </div>
       )}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        onFileUpload={handleFileUpload}
-        isRecording={state.isRecording}
-        onToggleRecording={toggleRecording}
-        isProcessing={state.isProcessing}
-      />
       
       {currentStep && (
         <OnboardingDialog

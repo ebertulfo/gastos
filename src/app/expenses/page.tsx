@@ -11,13 +11,9 @@ import useProtectedRoute from "@/hooks/useProtectedRoute";
 import { useState } from "react";
 import AddExpenseForm from "./components/AddExpenseForm";
 import ExpenseList from "./components/ExpensesList";
+import { Period } from "@/enums/Period";
 
-export enum Period {
-  Today = "Today",
-  ThisWeek = "This Week",
-  ThisMonth = "This Month",
-  ThisYear = "This Year",
-}
+
 export default function ExpensesPage() {
   useProtectedRoute();
   const [periodFilter, setPeriodFilter] = useState<Period>(Period.ThisMonth);

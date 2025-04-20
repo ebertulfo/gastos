@@ -1,6 +1,6 @@
 // src/app/api/expenses/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { ExpenseSchema, Expense, ExpenseCategory } from "@/schemas/expense";
+import { ExpenseSchema, Expense } from "@/schemas/expense";
 import { SupabaseExpenseService } from "@/services/SupabaseExpenseService";
 
 async function authenticate(req: NextRequest): Promise<NextResponse | null> {

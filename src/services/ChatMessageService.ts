@@ -2,40 +2,18 @@ import { supabase } from "@/lib/supabase";
 import { Message } from "@/components/chat/types";
 
 export class ChatMessageService {
-  private authToken: string | null;
-
-  constructor(authToken: string | null = null) {
-    this.authToken = authToken;
-  }
-
-  private getHeaders() {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (this.authToken) {
-      headers["Authorization"] = `Bearer ${this.authToken}`;
-    }
-    return headers;
-  }
-
-  async getMessages(userId: string, limit: number = 10, before?: Date): Promise<Message[]> {
-    console.log(`Getting messages for user ${userId}, limit: ${limit}, before: ${before?.toISOString()}`);
+  async getMessages(userId: string, limit: number = 10, offset: number = 0): Promise<Message[]> {
+    console.log(`Getting messages for user ${userId}, limit: ${limit}, offset: ${offset}`);
     
-    let query = supabase
+    const query = supabase
       .from("chat_messages")
       .select(`
         *,
         expense:expenses(*)
       `)
-      .eq("user_id", userId);
-    
-    // If we have a 'before' timestamp, filter messages before that time
-    if (before) {
-      query = query.lt("timestamp", before.toISOString());
-    }
-    
-    // Order by timestamp descending (newest first) and limit
-    query = query.order("timestamp", { ascending: false }).limit(limit);
+      .eq("user_id", userId)
+      .order("timestamp", { ascending: false }) // Newest messages first
+      .range(offset, offset + limit - 1); // Use range instead of limit
     
     const { data, error } = await query;
 
@@ -47,7 +25,6 @@ export class ChatMessageService {
     console.log(`Got ${data.length} messages`);
     
     // Convert to Message objects and reverse to maintain chronological order
-    // This ensures oldest messages appear first in the UI
     return data
       .map(msg => ({
         id: msg.id,

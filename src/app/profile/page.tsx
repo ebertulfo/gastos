@@ -11,7 +11,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import useProtectedRoute from "@/hooks/useProtectedRoute";
 import { Loader2, User, AtSign, MapPin, DollarSign, BotIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +31,6 @@ export default function ProfilePage() {
   useProtectedRoute();
   const { toast } = useToast();
   const { user, updateLoggedInUser } = useAuth();
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,7 +56,7 @@ export default function ProfilePage() {
         const { data, error } = await supabase
           .from("user_profiles")
           .select("*")
-          .eq("id", user.id)
+          .eq("id", user.uid)
           .single();
 
         if (error) {
@@ -106,7 +104,7 @@ export default function ProfilePage() {
       const { error } = await supabase
         .from("user_profiles")
         .upsert({
-          id: user.id,
+          id: user.uid,
           full_name: data.name,
           country: data.country,
           currency: data.currency,
@@ -131,11 +129,11 @@ export default function ProfilePage() {
         description: "Your profile has been updated successfully!",
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile",
+        description: error instanceof Error ? error.message : "Failed to update profile",
         variant: "destructive",
       });
     } finally {

@@ -26,8 +26,8 @@ export class SupabaseExpenseService implements IExpenseService {
 
   async create(data: Expense): Promise<Expense> {
     // Create a clean new expense object
-    const newExpense: Record<string, any> = {
-      description: data.description,
+    const newExpense: Record<string, string | number | boolean | null> = {
+      description: data.description ?? '',
       amount: data.amount,
       category: data.category,
       date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
@@ -81,9 +81,9 @@ export class SupabaseExpenseService implements IExpenseService {
 
   async update(id: string, data: Expense): Promise<Expense> {
     // Create a clean update object
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, string | number | boolean | null> = {
       // Always include these basic fields if they exist
-      description: data.description,
+      description: data.description ?? '',
       amount: data.amount,
       category: data.category,
       // Format date properly

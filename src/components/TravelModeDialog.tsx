@@ -12,20 +12,6 @@ interface TravelModeDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const travelCurrencies = [
-  { label: "Philippine Peso (PHP)", value: "PHP" },
-  { label: "Japanese Yen (JPY)", value: "JPY" },
-  { label: "New Taiwan Dollar (TWD)", value: "TWD" },
-  { label: "Euro (EUR)", value: "EUR" },
-  { label: "Swiss Franc (CHF)", value: "CHF" },
-  { label: "South Korean Won (KRW)", value: "KRW" },
-  { label: "Thai Baht (THB)", value: "THB" },
-  { label: "Vietnamese Dong (VND)", value: "VND" },
-  { label: "Malaysian Ringgit (MYR)", value: "MYR" },
-  { label: "Indonesian Rupiah (IDR)", value: "IDR" },
-  { label: "Australian Dollar (AUD)", value: "AUD" },
-];
-
 export function TravelModeDialog({ open, onOpenChange }: TravelModeDialogProps) {
   const { travelMode, toggleTravelMode, setTravelCurrency } = useTravelMode();
   const [selectedCurrency, setSelectedCurrency] = useState<string>(travelMode.travelCurrency || "");

@@ -16,14 +16,15 @@ import { useCurrencyFormatter } from "@/hooks/useCurrencyFormatter";
 export default function DashboardPage() {
   useProtectedRoute();
   const { user } = useAuth();
-  const { formatAmount } = useCurrencyFormatter(); // Use our new hook
+  const { formatAmount } = useCurrencyFormatter();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePeriod, setActivePeriod] = useState<Period>(Period.ThisMonth);
+  const userCurrency = user?.currency || 'USD'; // Get user's preferred currency
 
   useEffect(() => {
     if (user) {
-      fetchExpenses(user.id, activePeriod);
+      fetchExpenses(user.uid, activePeriod);
     }
   }, [user, activePeriod]);
 
@@ -40,8 +41,15 @@ export default function DashboardPage() {
   };
 
   // Calculate total spending
-  const totalSpending = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  
+  const totalSpending = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+
+  // Calculate travel expenses separately
+  const travelExpenses = expenses.filter(expense => expense.is_travel_expense);
+  const travelExpensesAmount = travelExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+
+  // Calculate travel expenses count
+  const travelExpensesCount = travelExpenses.length;
+
   // Get recent transactions (last 5)
   const recentTransactions = [...expenses]
     .sort((a, b) => {
@@ -62,11 +70,6 @@ export default function DashboardPage() {
   const topCategories = Object.entries(spendingByCategory)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
-
-  // Calculate travel expenses
-  const travelExpenses = expenses.filter(expense => expense.is_travel_expense);
-  const travelExpensesAmount = travelExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const travelExpensesCount = travelExpenses.length;
 
   // Format date safely
   const formatDate = (date: Date | string | undefined) => {
@@ -97,11 +100,11 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Spending</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Spending ({userCurrency})</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${totalSpending.toFixed(2)}</div>
+                <div className="text-2xl font-bold">{formatAmount(totalSpending, userCurrency)}</div>
                 <p className="text-xs text-muted-foreground">{activePeriod}</p>
               </CardContent>
             </Card>
@@ -124,7 +127,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${expenses.length ? (totalSpending / 30).toFixed(2) : "0.00"}
+                  {expenses.length ? formatAmount((totalSpending / 30), userCurrency) : formatAmount(0, userCurrency)}
                 </div>
                 <p className="text-xs text-muted-foreground">Per day this period</p>
               </CardContent>
@@ -140,7 +143,7 @@ export default function DashboardPage() {
                   {topCategories.length > 0 ? topCategories[0][0] : "N/A"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {topCategories.length > 0 ? `$${topCategories[0][1].toFixed(2)}` : "No data"}
+                  {topCategories.length > 0 ? formatAmount(topCategories[0][1], userCurrency) : "No data"}
                 </p>
               </CardContent>
             </Card>
@@ -158,8 +161,9 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="text-sm font-medium">Amount</p>
-                    <p className="text-2xl font-bold">${travelExpensesAmount.toFixed(2)}</p>
+                    <p className="text-sm font-medium">Amount (Home Currency)</p>
+                    <p className="text-2xl font-bold">{formatAmount(travelExpensesAmount, userCurrency)}</p>
+                    <p className="text-xs text-muted-foreground">Converted to {userCurrency}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Count</p>
@@ -248,7 +252,8 @@ export default function DashboardPage() {
                         {expense.is_travel_expense && expense.original_amount && expense.travel_currency ? (
                           <div className="flex flex-col">
                             <p className="font-medium text-destructive">
-                              {formatAmount(expense.amount, expense.currency || 'USD')}
+                              {formatAmount(expense.amount, userCurrency)} 
+                              <span className="text-xs ml-1 font-normal text-muted-foreground">(used in totals)</span>
                             </p>
                             <div className="flex items-center text-xs text-muted-foreground gap-1">
                               <span>from</span>
@@ -262,7 +267,7 @@ export default function DashboardPage() {
                           </div>
                         ) : (
                           <p className="font-medium text-destructive">
-                            {formatAmount(expense.amount, expense.currency || 'USD')}
+                            {formatAmount(expense.amount, expense.currency || userCurrency)}
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground">
@@ -303,7 +308,7 @@ export default function DashboardPage() {
                         <div key={category} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{category}</span>
-                            <span>${amount.toFixed(2)} ({percentage.toFixed(1)}%)</span>
+                            <span>{formatAmount(amount, userCurrency)} ({percentage.toFixed(1)}%)</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-2">
                             <div 
@@ -357,12 +362,12 @@ export default function DashboardPage() {
                         </span>
                       </div>
                       
-                      {/* <div className="flex justify-between items-center text-sm text-muted-foreground">
-                        <span>Equivalent in home currency</span>
+                      <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Equivalent in {userCurrency}</span>
                         <span className="font-medium">
-                          {formatAmount(data.totalConverted, 'USD')}
+                          {formatAmount(data.totalConverted, userCurrency)}
                         </span>
-                      </div> */}
+                      </div>
                       
                       <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
                         <span>Number of expenses</span>
@@ -372,7 +377,7 @@ export default function DashboardPage() {
                       {data.totalOriginal > 0 && data.totalConverted > 0 && (
                         <div className="flex justify-between items-center text-xs text-primary/70 mt-1">
                           <span>Average exchange rate</span>
-                          <span>1 USD ≈ {(data.totalOriginal / data.totalConverted).toFixed(2)} {currency}</span>
+                          <span>1 {currency} = {(data.totalConverted / data.totalOriginal).toFixed(2)} {userCurrency}</span>
                         </div>
                       )}
                     </div>
@@ -382,9 +387,9 @@ export default function DashboardPage() {
                   {travelExpenses.length > 0 && (
                     <div className="mt-4 pt-2 border-t">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium">Total in home currency</span>
+                        <span className="font-medium">Total in home currency ({userCurrency})</span>
                         <span className="font-bold">
-                          {formatAmount(travelExpensesAmount, 'USD')}
+                          {formatAmount(travelExpensesAmount, userCurrency)}
                         </span>
                       </div>
                     </div>

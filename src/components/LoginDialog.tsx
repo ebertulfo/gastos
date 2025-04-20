@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
 // Email schema validation
 const emailSchema = z.object({
@@ -32,7 +32,6 @@ interface LoginDialogProps {
 
 export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [email, setEmail] = useState("");
@@ -267,7 +266,7 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
               </Form>
               <div className="text-center mt-4">
                 <p className="text-sm text-muted-foreground mb-2">
-                  Didn't receive the code?
+                  Didn&apos;t receive the code?
                 </p>
                 <Button
                   variant="outline"
@@ -282,9 +281,23 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
               </div>
             </div>
           )}
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-          </p>
+          <div className="px-8 text-center text-sm text-muted-foreground">
+            By clicking continue, you agree to our{" "}
+            <Link
+              href="#"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="#"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -12,6 +12,7 @@ interface MessageListProps {
   isLoadingMore: boolean;
   loadMoreMessages: () => Promise<void>;
   isProcessing?: boolean; // Add isProcessing prop
+  onMessageClick?: (message: Message) => void; // Add callback for message clicks
 }
 
 export function MessageList({ 
@@ -21,14 +22,17 @@ export function MessageList({
   hasMoreMessages,
   isLoadingMore,
   loadMoreMessages,
-  isProcessing = false // Default to false
+  isProcessing = false, // Default to false
+  onMessageClick
 }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(messages.length);
   const prevMessagesRef = useRef<Message[]>(messages);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
-  const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const [preserveScroll, setPreserveScroll] = useState(false);
+  const [scrollAnchorId, setScrollAnchorId] = useState<string | null>(null);
+  const [scrollAnchorPosition, setScrollAnchorPosition] = useState<number | null>(null);
   
   // Function to determine if new messages were added at the end
   const hasNewMessagesAtEnd = useCallback(() => {
@@ -67,25 +71,19 @@ export function MessageList({
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
     
-    // Mark that user has scrolled
-    setUserHasScrolled(true);
-    
     // Check if we should load more messages
     if (!isLoadingMore && hasMoreMessages && containerRef.current.scrollTop <= 50) {
-      // Save the second message as reference point (more stable than first which will disappear)
-      const secondMessageElement = containerRef.current.children[1] as HTMLElement;
-      const referenceMessage = secondMessageElement || null;
+      // Save scroll position before loading more messages
+      setPreserveScroll(true);
+      
+      // Save a reference message ID to restore scroll position
+      if (messages.length > 1) {
+        setScrollAnchorId(messages[1]?.id || messages[0]?.id);
+        setScrollAnchorPosition(containerRef.current.scrollTop);
+      }
       
       // Load more messages
-      loadMoreMessages().then(() => {
-        // Wait a bit for the DOM to update
-        setTimeout(() => {
-          // Try to find the same message element and scroll to it
-          if (referenceMessage && containerRef.current) {
-            referenceMessage.scrollIntoView({ block: 'start' });
-          }
-        }, 10);
-      });
+      loadMoreMessages();
     }
     
     // Check if user has scrolled to bottom (with 100px threshold)
@@ -95,8 +93,10 @@ export function MessageList({
     // If user manually scrolled to bottom, we can auto-scroll again
     if (isNearBottom) {
       setShouldScrollToBottom(true);
+    } else {
+      setShouldScrollToBottom(false);
     }
-  }, [hasMoreMessages, isLoadingMore, loadMoreMessages]);
+  }, [hasMoreMessages, isLoadingMore, loadMoreMessages, messages]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -127,21 +127,31 @@ export function MessageList({
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } 
-    else if (olderMessagesLoaded && containerRef.current) {
-      // If older messages were loaded, maintain scroll position
-      // We don't need to do anything here since the DOM updates naturally
-      // and we already have handler in loadMoreMessages that adjusts scroll
-    }
-    
-    // After any user scroll, stop auto-scrolling until they return to bottom
-    if (userHasScrolled && !newMessagesAdded) {
-      setShouldScrollToBottom(false);
+    else if (olderMessagesLoaded && preserveScroll && containerRef.current) {
+      // If older messages were loaded, restore scroll position to the anchor message
+      setTimeout(() => {
+        // Find anchor message element by ID if possible
+        if (scrollAnchorId) {
+          const messageElements = containerRef.current?.querySelectorAll('[data-message-id]');
+          const anchorElement = Array.from(messageElements || []).find(
+            el => el.getAttribute('data-message-id') === scrollAnchorId
+          ) as HTMLElement | undefined;
+          
+          if (anchorElement) {
+            anchorElement.scrollIntoView({ block: 'start' });
+          } else if (scrollAnchorPosition !== null) {
+            // Fall back to position-based restore if we can't find the element
+            containerRef.current!.scrollTop = scrollAnchorPosition + 200; // Add offset for new messages
+          }
+        }
+        setPreserveScroll(false);
+      }, 100);
     }
     
     // Update refs for next comparison
     prevMessagesLengthRef.current = messages.length;
     prevMessagesRef.current = [...messages];
-  }, [messages, hasNewMessagesAtEnd, wereOlderMessagesLoaded, shouldScrollToBottom, userHasScrolled]);
+  }, [messages, hasNewMessagesAtEnd, wereOlderMessagesLoaded, shouldScrollToBottom, preserveScroll, scrollAnchorId, scrollAnchorPosition]);
 
   // Initial scroll to bottom only when component first mounts
   useEffect(() => {
@@ -151,16 +161,16 @@ export function MessageList({
         messagesEndRef.current?.scrollIntoView();
       }, 300);
     }
-  }, []);
+  }, []); // Only run on mount
 
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto p-4 space-y-4"
+      className="flex-1 overflow-y-auto px-3 py-4 h-full"
     >
       {/* Loading indicator when fetching more messages */}
       {isLoadingMore && (
-        <div className="text-center py-2 text-sm text-muted-foreground">
+        <div className="text-center py-3 mb-2 text-sm text-muted-foreground">
           Loading older messages...
         </div>
       )}
@@ -169,32 +179,36 @@ export function MessageList({
       {hasMoreMessages && !isLoadingMore && (
         <button
           onClick={() => loadMoreMessages()}
-          className="w-full text-center py-2 text-sm text-blue-500 hover:text-blue-700"
+          className="w-full text-center py-3 mb-2 text-sm text-blue-500 hover:text-blue-700"
         >
           Load older messages
         </button>
       )}
       
-      {/* Messages list */}
-      {messages.map((message, index) => (
-        <MessageItem 
-          key={`${message.id}-${index}`} 
-          message={message} 
-          updateMessageInState={updateMessageInState}
-          getChatService={getChatService}
-        />
-      ))}
+      {/* Messages list - removed space-y-4 since we added margin to MessageItem */}
+      <div className="flex flex-col">
+        {messages.map((message, index) => (
+          <MessageItem 
+            key={`${message.id}-${index}`} 
+            message={message} 
+            updateMessageInState={updateMessageInState}
+            getChatService={getChatService}
+            data-message-id={message.id} // Add data attribute for scroll anchoring
+            onClick={() => onMessageClick && onMessageClick(message)}
+          />
+        ))}
+      </div>
       
       {/* Processing indicator */}
       {isProcessing && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 animate-pulse">
+        <div className="flex items-center gap-2 p-4 mt-3 rounded-lg bg-muted/50 animate-pulse">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Processing...</span>
         </div>
       )}
       
       {/* Anchor for auto-scrolling to the end */}
-      <div ref={messagesEndRef} />
+      <div ref={messagesEndRef} className="h-1" />
     </div>
   );
 }

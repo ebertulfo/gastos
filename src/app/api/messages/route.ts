@@ -1,12 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
-import {
-  Expense,
-  OpenAIExpenseSchema,
-  QueryExpenseSchema,
-} from "@/schemas/expense"; // Assuming QueryExpenseSchema for query structure
-import { OpenAIExpenseParser } from "@/services/OpenAIExpenseParser";
 
 export async function POST(req: NextRequest) {
   try {

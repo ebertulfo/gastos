@@ -33,7 +33,7 @@ export function useCurrencyFormatter() {
         style: 'currency',
         currency: validCurrency,
       }).format(amount);
-    } catch (error) {
+    } catch {
       // Fallback in case the currency code is still invalid
       console.warn(`Invalid currency code: ${validCurrency}. Falling back to ${fallbackCurrency}.`);
       return new Intl.NumberFormat('en-US', {
@@ -65,7 +65,7 @@ export function formatCurrency(
       style: 'currency',
       currency: validCurrency,
     }).format(amount);
-  } catch (error) {
+  } catch {
     // Fallback in case the currency code is still invalid
     console.warn(`Invalid currency code: ${validCurrency}. Falling back to ${fallbackCurrency}.`);
     return new Intl.NumberFormat('en-US', {

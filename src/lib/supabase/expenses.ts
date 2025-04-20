@@ -1,4 +1,5 @@
 import { SearchFilters } from "@/types";
+import { Period as EPeriod } from "@/enums/Period";
 import { Expense } from "@/schemas/expense";
 import { supabase } from "./index";
 import { convertPeriodToDateRange } from "../helpers/filter";
@@ -43,7 +44,9 @@ export const getUserExpenses = async (
 
     // Apply additional filters if provided
     if (filters.period) {
-      const dateRange = convertPeriodToDateRange(filters.period);
+      // Convert the string period to the enum Period type
+      const periodEnum = filters.period as unknown as EPeriod;
+      const dateRange = convertPeriodToDateRange(periodEnum);
       query = query
         .gte("date", dateRange.start.toISOString())
         .lte("date", dateRange.end.toISOString());
@@ -56,7 +59,7 @@ export const getUserExpenses = async (
     // Transform the data to match the expected format
     return (data || []).map(expense => ({
       ...expense,
-      date: new Date(expense.date),
+      date: expense.date ? new Date(expense.date) : new Date(),
       created_at: expense.created_at ? new Date(expense.created_at) : null,
     })) as Expense[];
   } catch (error) {

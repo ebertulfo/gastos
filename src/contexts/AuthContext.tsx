@@ -3,12 +3,12 @@
 import { SupabaseStore } from "@/dataStores/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { AuthChangeEvent } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface ExtendedUser {
-  id: string;
+  uid: string;
   email: string | null;
   telegram_id?: number | null;
   is_onboarded: boolean;
@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const profile = await fetchUserProfile(supabaseUser.id);
           
           setUser({
-            id: supabaseUser.id,
+            uid: supabaseUser.id,
             email: supabaseUser.email || null,
             telegram_id: profile?.telegram_id || null,
             is_onboarded: profile?.is_onboarded || false,
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Listen for auth changes
     const { data } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
+      async (event: AuthChangeEvent) => {
         console.log("Auth event:", event);
         if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
           setupSession();

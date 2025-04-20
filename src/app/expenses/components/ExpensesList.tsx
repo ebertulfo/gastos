@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { deleteExpense, getUserExpenses } from "@/lib/supabase/expenses";
-import { Expense, ExpenseCategory } from "@/schemas/expense";
+import { Expense } from "@/schemas/expense";
 import { Period } from "@/types";
 import { Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -28,7 +28,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ period }) => {
   useEffect(() => {
     if (user) {
       console.log("fetching expenses", period);
-      fetchExpenses(user.id, period);
+      fetchExpenses(user.uid, period);
     }
   }, [user, period]);
 
@@ -52,7 +52,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ period }) => {
   const handleEditSuccess = () => {
     setEditingExpense(null);
     if (user) {
-      fetchExpenses(user.id, period);
+      fetchExpenses(user.uid, period);
     }
   };
 
