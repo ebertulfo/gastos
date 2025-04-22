@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Home, BarChart2, BotIcon, Settings } from "lucide-react";
+import { User, LogOut, Home, BarChart2, BotIcon, Settings, MessageCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TravelModeToggle } from "@/components/TravelModeToggle";
 
@@ -29,6 +29,9 @@ const Navbar: React.FC = () => {
       {user ? (
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-4">
+            <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Chat
+            </Link>
             <Link href="/dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
@@ -52,6 +55,12 @@ const Navbar: React.FC = () => {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/" className="flex items-center gap-2 w-full">
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Chat</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer">
                 <Link href="/dashboard" className="flex items-center gap-2 w-full">
                   <Home className="h-4 w-4" />

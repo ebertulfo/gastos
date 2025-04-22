@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { AuthChangeEvent } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 interface ExtendedUser {
   uid: string;
@@ -151,7 +152,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider value={{ user, loading, signOut, updateLoggedInUser }}>
-      {loading ? <div>Loading...</div> : children}
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <LoadingScreen />
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

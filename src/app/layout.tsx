@@ -43,7 +43,7 @@ export default function RootLayout({
           <AuthProvider>
             <TravelModeProvider>
               <Navbar />
-              <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-[auto] pt-5">
+              <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-[auto]">
                 {children}
               </main>
             </TravelModeProvider>

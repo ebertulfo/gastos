@@ -73,11 +73,13 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
       setLoading(true);
       setEmail(values.email);
 
+      // Always set shouldCreateUser: true to ensure consistent behavior
       const { error } = await supabase.auth.signInWithOtp({
         email: values.email,
         options: {
-          // Set to true to use OTP instead of magic link
           shouldCreateUser: true,
+          // Force OTP for both new and existing users (instead of confirmation links)
+          emailRedirectTo: window.location.origin,
         },
       });
 
@@ -155,6 +157,8 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         email,
         options: {
           shouldCreateUser: true,
+          // Force OTP for both new and existing users
+          emailRedirectTo: window.location.origin,
         },
       });
 

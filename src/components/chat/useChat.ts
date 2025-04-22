@@ -7,8 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
 import { ChatMessageService } from "@/services/ChatMessageService";
 
-// Welcome messages with content from the landing page for non-logged in users
-const WELCOME_MESSAGES: Omit<Message, "id" | "timestamp">[] = [
+// Welcome messages for non-logged in users
+const GUEST_WELCOME_MESSAGES: Omit<Message, "id" | "timestamp">[] = [
   {
     content: "👋 Welcome to Gastos - Track Your Spending, Effortlessly!",
     role: "assistant",
@@ -25,6 +25,22 @@ const WELCOME_MESSAGES: Omit<Message, "id" | "timestamp">[] = [
     content: "Login or sign up to get started tracking your expenses today!",
     role: "assistant",
     action: "onboarding",
+  }
+];
+
+// Welcome messages for logged-in users with no chat history
+const LOGGED_IN_WELCOME_MESSAGES: Omit<Message, "id" | "timestamp">[] = [
+  {
+    content: "👋 Welcome to Gastos! Let's start tracking your expenses.",
+    role: "assistant",
+  },
+  {
+    content: "You can:\n• Add a new expense by typing something like \"I spent $25 on lunch today\"\n• Upload a receipt photo to automatically log an expense\n• Ask to see a summary of your spending",
+    role: "assistant",
+  },
+  {
+    content: "What would you like to track today?",
+    role: "assistant",
   }
 ];
 
@@ -112,8 +128,10 @@ export function useChat() {
     console.log("Showing welcome messages");
     const delayBetweenMessages = 500;
 
-    for (let i = 0; i < WELCOME_MESSAGES.length; i++) {
-      const message = WELCOME_MESSAGES[i];
+    const messagesToShow = user ? LOGGED_IN_WELCOME_MESSAGES : GUEST_WELCOME_MESSAGES;
+
+    for (let i = 0; i < messagesToShow.length; i++) {
+      const message = messagesToShow[i];
       const newMessage = {
         ...message,
         id: uuidv4(),
@@ -128,7 +146,7 @@ export function useChat() {
         messages: [...prev.messages, { ...newMessage, role: newMessage.role as "user" | "assistant" }],
       }));
     }
-  }, []);
+  }, [user]);
 
   // Load initial chat messages
   useEffect(() => {

@@ -50,7 +50,7 @@ export function ChatUI() {
         </div>
       ) : (
         <div className="flex flex-col h-full">
-          <div className="flex-1 overflow-auto">
+          <div className="flex-grow overflow-hidden">
             <MessageList 
               messages={state.messages} 
               updateMessageInState={updateMessageInState}
@@ -62,7 +62,7 @@ export function ChatUI() {
               onMessageClick={handleMessageClick}
             />
           </div>
-          <div className="sticky bottom-0 z-10 bg-background border-t shadow-sm">
+          <div className="flex-shrink-0 bg-background border-t shadow-sm">
             <ChatInput
               onSendMessage={handleSendMessage}
               onFileUpload={handleFileUpload}

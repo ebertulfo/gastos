@@ -166,7 +166,7 @@ export function MessageList({
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto px-3 py-4 h-full"
+      className="h-full overflow-y-auto px-3 py-4"
     >
       {/* Loading indicator when fetching more messages */}
       {isLoadingMore && (
