@@ -16,7 +16,7 @@ export function LoadingScreen() {
       
       <div className="mt-4 text-center">
         <p className="text-sm text-muted-foreground">Loading...</p>
-        <p className="text-xs text-muted-foreground/70 mt-1">This won't take long</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">This won&apos;t take long</p>
       </div>
     </div>
   );

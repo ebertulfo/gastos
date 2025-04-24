@@ -23,6 +23,7 @@ export function ChatUI() {
     loadMoreMessages,
     updateMessageInState,
     getChatService,
+    deleteMessage,
   } = useChat();
 
   const handleOnboardingClose = () => {
@@ -60,6 +61,7 @@ export function ChatUI() {
               loadMoreMessages={loadMoreMessages}
               isProcessing={state.isProcessing}
               onMessageClick={handleMessageClick}
+              deleteMessage={deleteMessage}
             />
           </div>
           <div className="flex-shrink-0 bg-background border-t shadow-sm">

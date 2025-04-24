@@ -1,5 +1,5 @@
 import { Message } from "./types";
-import { User, Bot as BotIcon } from "lucide-react";
+import { User, Bot as BotIcon, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import ExpenseMessage from "@/components/ExpenseMessage";
@@ -15,17 +15,17 @@ interface MessageItemProps {
   message: Message;
   updateMessageInState: (message: Message) => void;
   getChatService: () => Promise<ChatMessageService | null>;
-  removeMessageFromState?: (messageId: string) => void;
   'data-message-id'?: string; // Add support for data-message-id attribute
   onClick?: () => void; // Add onClick prop for handling message clicks
+  onDelete?: () => void; // Add onDelete prop for handling message deletion
 }
 
 export function MessageItem({ 
   message, 
   updateMessageInState, 
   getChatService,
-  removeMessageFromState,
   'data-message-id': dataMessageId, // Destructure the data attribute
+  onDelete,
   ...props // Capture any other props
 }: MessageItemProps) {
   const isUser = message.role === "user";
@@ -95,24 +95,16 @@ export function MessageItem({
       // Delete the expense from the database
       await expenseService.delete(expenseId);
       
-      // Remove or update the message
+      // Update the message to no longer reference the expense
       if (message.id) {
-        if (removeMessageFromState) {
-          // If we can remove messages, simply remove this one
-          removeMessageFromState(message.id);
-          
-          // Also delete the message from the database
-          await chatService.deleteMessage(message.id);
-        } else {
-          // Otherwise, update the message to no longer reference the expense
-          const updatedMessage = await chatService.updateMessage(message.id, {
-            expense: undefined,
-            content: "Expense has been deleted."
-          });
-          
-          // Update the message in the local state
-          updateMessageInState(updatedMessage);
-        }
+        // Update the message to no longer reference the expense
+        const updatedMessage = await chatService.updateMessage(message.id, {
+          expense: undefined,
+          content: "Expense has been deleted."
+        });
+        
+        // Update the message in the local state
+        updateMessageInState(updatedMessage);
       }
       
       toast({
@@ -127,21 +119,35 @@ export function MessageItem({
         variant: "destructive",
       });
     }
-  }, [message.id, updateMessageInState, removeMessageFromState, getChatService, toast]);
+  }, [message.id, updateMessageInState, getChatService, toast]);
 
   return (
     <div 
-      className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}
-      data-message-id={dataMessageId || message.id} // Apply the data attribute
-      {...props} // Pass through any other props
+      className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4 group`}
+      data-message-id={dataMessageId || message.id}
+      {...props}
     >
       <div className={`flex items-start gap-3 max-w-[85%] ${isUser ? "flex-row-reverse" : "flex-row"}`}>
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
           <Icon className="w-5 h-5 text-primary" />
         </div>
         
-        <Card className={`p-4 ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"} ${message.action === "onboarding" ? "cursor-pointer hover:bg-accent transition-colors" : ""} shadow-sm`}
+        <Card className={`p-4 relative ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"} ${message.action === "onboarding" ? "cursor-pointer hover:bg-accent transition-colors" : ""} shadow-sm`}
           onClick={message.action === "onboarding" ? props.onClick : undefined}>
+          {/* Delete button - only show on hover */}
+          {onDelete && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering card onClick
+                onDelete();
+              }}
+              className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-500 transition-opacity" // Adjusted position
+              title="Delete message"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+          
           {message.attachmentUrl && (
             <div className="mb-3">
               <Image

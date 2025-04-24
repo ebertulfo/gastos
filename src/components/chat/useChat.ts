@@ -451,12 +451,14 @@ export function useChat() {
     try {
       const previewUrl = URL.createObjectURL(file);
 
+      // Add user's message with the attachment
       await addMessage({
-        content: "Sent an attachment",
+        content: "Uploaded image", // Change from "Processing receipt..." to just "Uploaded image"
         role: "user",
         attachmentUrl: previewUrl,
       });
 
+      /* OCR processing temporarily disabled
       const chatService = await getChatService();
       if (!chatService) {
         throw new Error("Failed to initialize chat service");
@@ -468,40 +470,89 @@ export function useChat() {
       reader.onload = async () => {
         const base64Data = reader.result as string;
 
-        const response = await fetch("/api/messages/web", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${authTokenRef.current}`,
-          },
-          body: JSON.stringify({
-            user_id: user.uid,
-            file: base64Data,
-            currency: user.currency || "USD", // Pass user's currency preference
-            travel_mode: travelMode, // Pass travel mode context
-          }),
-        });
+        try {
+          const response = await fetch("/api/messages/web", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${authTokenRef.current}`,
+            },
+            body: JSON.stringify({
+              user_id: user.uid,
+              file: base64Data,
+              currency: user.currency || "USD",
+              travel_mode: travelMode,
+            }),
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to process file");
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to process receipt");
+          }
+
+          const data = await response.json();
+
+          // Add the assistant's response
+          await addMessage({
+            content: data.message || data.reply,
+            role: "assistant",
+            action: data.action,
+            expense: data.expense,
+          });
+        } catch (error) {
+          console.error("Error processing file:", error);
+          
+          // Add an error message from assistant
+          await addMessage({
+            content: error instanceof Error 
+              ? `Error: ${error.message}` 
+              : "Failed to process the receipt. Please try again or manually enter the expense details.",
+            role: "assistant",
+          });
+          
+          toast({
+            title: "Error",
+            description: error instanceof Error 
+              ? error.message 
+              : "Failed to process receipt. Please try again.",
+            variant: "destructive",
+          });
         }
+      };
 
-        const data = await response.json();
-
+      reader.onerror = async () => {
+        // Handle file reading errors
         await addMessage({
-          content: data.message || data.reply,
+          content: "Failed to read the file. Please try again with a different image.",
           role: "assistant",
-          action: data.action,
-          expense: data.expense,
+        });
+        
+        toast({
+          title: "Error",
+          description: "Failed to read the image file.",
+          variant: "destructive",
         });
       };
+      */
+      
+      // Add a placeholder message instead of OCR processing
+      await addMessage({
+        content: "OCR processing is temporarily disabled. Please enter expense details manually.",
+        role: "assistant",
+      });
+      
     } catch (error) {
       console.error("Error processing file:", error);
+      
+      // Add an error message from assistant
+      await addMessage({
+        content: "There was a problem with your file upload. OCR processing is currently disabled.",
+        role: "assistant",
+      });
+      
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process file. Please try again.",
-        variant: "destructive",
+        title: "Notice",
+        description: "OCR processing is temporarily disabled. Please enter expense details manually.",
       });
     } finally {
       setState(prev => ({ ...prev, isProcessing: false }));
@@ -538,6 +589,42 @@ export function useChat() {
     }));
   }, []);
 
+  // Add delete message function
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!user) return;
+
+    try {
+      const chatService = await getChatService();
+      if (!chatService) {
+        throw new Error("Failed to initialize chat service");
+      }
+
+      // Delete the message from the database
+      await chatService.deleteMessage(messageId);
+
+      // Remove the message from the UI state
+      setState(prev => ({
+        ...prev,
+        messages: prev.messages.filter(msg => msg.id !== messageId),
+      }));
+
+      // Update the total message count
+      totalMessageCountRef.current -= 1;
+
+      toast({
+        title: "Message deleted",
+        description: "Message has been removed from your chat history.",
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [user, toast, getChatService]);
+
   return {
     state,
     addMessage,
@@ -554,5 +641,6 @@ export function useChat() {
     loadMoreMessages,
     updateMessageInState,
     getChatService,
+    deleteMessage, // Export the new function
   };
 }

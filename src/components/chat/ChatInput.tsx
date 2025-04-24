@@ -1,7 +1,18 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, MicOff, PaperclipIcon, Send } from "lucide-react";
+import { 
+  // Mic, 
+  // MicOff, 
+  // PaperclipIcon, 
+  Send 
+} from "lucide-react";
+// import { 
+//   Tooltip,
+//   TooltipContent,
+//   TooltipProvider,
+//   TooltipTrigger,
+// } from "@/components/ui/tooltip";
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
@@ -13,13 +24,13 @@ interface ChatInputProps {
 
 export function ChatInput({
   onSendMessage,
-  onFileUpload,
-  isRecording,
-  onToggleRecording,
+  // onFileUpload,
+  // isRecording,
+  // onToggleRecording,
   isProcessing,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,12 +40,12 @@ export function ChatInput({
     setMessage("");
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onFileUpload(file);
-    }
-  };
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     onFileUpload(file);
+  //   }
+  // };
 
   return (
     <form onSubmit={handleSubmit} className="p-3">
@@ -47,7 +58,7 @@ export function ChatInput({
           className="flex-1"
         />
         
-        <input
+        {/* <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
@@ -55,17 +66,26 @@ export function ChatInput({
           accept="image/*,audio/*"
         />
         
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isProcessing}
-        >
-          <PaperclipIcon className="w-5 h-5" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessing}
+              >
+                <PaperclipIcon className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Upload file (OCR processing temporarily disabled)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider> */}
         
-        <Button
+        {/* <Button
           type="button"
           variant="ghost"
           size="icon"
@@ -77,7 +97,7 @@ export function ChatInput({
           ) : (
             <Mic className="w-5 h-5" />
           )}
-        </Button>
+        </Button> */}
         
         <Button type="submit" disabled={!message.trim() || isProcessing}>
           <Send className="w-5 h-5" />

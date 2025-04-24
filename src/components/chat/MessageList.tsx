@@ -3,6 +3,7 @@ import { Message } from "./types";
 import { MessageItem } from "./MessageItem";
 import { ChatMessageService } from "@/services/ChatMessageService";
 import { Loader2 } from "lucide-react"; // Import the loader icon
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface MessageListProps {
   messages: Message[];
@@ -13,6 +14,7 @@ interface MessageListProps {
   loadMoreMessages: () => Promise<void>;
   isProcessing?: boolean; // Add isProcessing prop
   onMessageClick?: (message: Message) => void; // Add callback for message clicks
+  deleteMessage?: (messageId: string) => Promise<void>; // Add deleteMessage function prop
 }
 
 export function MessageList({ 
@@ -23,7 +25,8 @@ export function MessageList({
   isLoadingMore,
   loadMoreMessages,
   isProcessing = false, // Default to false
-  onMessageClick
+  onMessageClick,
+  deleteMessage
 }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,6 +36,8 @@ export function MessageList({
   const [preserveScroll, setPreserveScroll] = useState(false);
   const [scrollAnchorId, setScrollAnchorId] = useState<string | null>(null);
   const [scrollAnchorPosition, setScrollAnchorPosition] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
   
   // Function to determine if new messages were added at the end
   const hasNewMessagesAtEnd = useCallback(() => {
@@ -66,6 +71,39 @@ export function MessageList({
       messages[messages.length - 1]?.id
     );
   }, [messages]);
+
+  // Function to safely reset scroll container without breaking clicks
+  const safelyResetScrollContainer = useCallback((callback?: () => void) => {
+    if (!containerRef.current) return;
+    
+    // Store current scroll position
+    const currentScrollTop = containerRef.current.scrollTop;
+    const wasAtBottom = shouldScrollToBottom;
+    
+    // Use CSS transitions instead of toggling overflow
+    // This is a gentler approach that won't break click events
+    containerRef.current.style.transition = 'none';
+    containerRef.current.style.opacity = '0.99';
+    
+    // Force a reflow with minimal visual impact
+    requestAnimationFrame(() => {
+      if (containerRef.current) {
+        // Restore opacity to normal with a transition
+        containerRef.current.style.transition = 'opacity 0.01s';
+        containerRef.current.style.opacity = '1';
+        
+        // Execute callback if provided
+        if (callback) callback();
+        
+        // Restore scroll position
+        if (wasAtBottom) {
+          messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+        } else {
+          containerRef.current.scrollTop = currentScrollTop;
+        }
+      }
+    });
+  }, [shouldScrollToBottom]);
 
   // Handle scroll events - both for detecting scroll position and load more
   const handleScroll = useCallback(() => {
@@ -163,6 +201,63 @@ export function MessageList({
     }
   }, []); // Only run on mount
 
+  // Add a global handler to fix any potential scroll lock issues
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    function resetScrollIfNeeded() {
+      if (containerRef.current) {
+        // Check if scrollTop is not changing despite scrollHeight > clientHeight
+        const needsReset = 
+          containerRef.current.scrollHeight > containerRef.current.clientHeight && 
+          Math.abs(containerRef.current.scrollTop) < 1; // Stuck at top
+          
+        if (needsReset) {
+          // Reset the scrolling container
+          safelyResetScrollContainer();
+        }
+      }
+    }
+    
+    // Check after a short delay after any message changes
+    if (messages.length > 0) {
+      timeoutId = setTimeout(resetScrollIfNeeded, 500);
+    }
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [messages.length, safelyResetScrollContainer]);
+
+  const handleDeleteMessage = (message: Message) => {
+    setMessageToDelete(message);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteMessage = () => {
+    if (messageToDelete && deleteMessage) {
+      // Preserve scroll position when a message is deleted
+      setPreserveScroll(true);
+
+      // Set a scroll anchor if there are messages
+      const index = messages.findIndex((msg) => msg.id === messageToDelete.id);
+      if (index !== -1 && messages.length > 1) {
+        const anchorIndex = index < messages.length - 1 ? index + 1 : index - 1;
+        if (anchorIndex >= 0) {
+          setScrollAnchorId(messages[anchorIndex]?.id || null);
+          if (containerRef.current) {
+            setScrollAnchorPosition(containerRef.current.scrollTop);
+          }
+        }
+      }
+
+      // Call the delete function
+      deleteMessage(messageToDelete.id);
+    }
+    setIsDeleteDialogOpen(false);
+    setMessageToDelete(null);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -185,7 +280,6 @@ export function MessageList({
         </button>
       )}
       
-      {/* Messages list - removed space-y-4 since we added margin to MessageItem */}
       <div className="flex flex-col">
         {messages.map((message, index) => (
           <MessageItem 
@@ -193,8 +287,8 @@ export function MessageList({
             message={message} 
             updateMessageInState={updateMessageInState}
             getChatService={getChatService}
-            data-message-id={message.id} // Add data attribute for scroll anchoring
             onClick={() => onMessageClick && onMessageClick(message)}
+            onDelete={deleteMessage && message.id ? () => handleDeleteMessage(message) : undefined}
           />
         ))}
       </div>
@@ -209,6 +303,26 @@ export function MessageList({
       
       {/* Anchor for auto-scrolling to the end */}
       <div ref={messagesEndRef} className="h-1" />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Message</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this message? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteMessage}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
