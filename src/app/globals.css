@@ -70,3 +70,18 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Magic UI Shine Border Animation */
+.shine-border-anim {
+  background-size: 200% 100%;
+  animation: shine-border 4s linear infinite;
+}
+
+@keyframes shine-border {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}

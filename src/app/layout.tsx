@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TravelModeProvider } from "@/contexts/TravelModeContext";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ShineBorder } from "@/components/ui/shine-border";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Suspense } from "react";
@@ -51,9 +52,15 @@ export default function RootLayout({
                 <Navbar />
               </Suspense>
               <Suspense fallback={<div className="flex justify-center items-center h-[calc(100vh-3.5rem)]">Loading application...</div>}>
-                <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-auto">
-                  {children}
-                </main>
+                <div className="relative mx-auto">
+                  <div className="w-[360px] md:w-[700px] lg:w-[960px] mx-auto mt-6">
+                    {/* <ShineBorder containerClassName="w-full"> */}
+                      <main className="w-full rounded-xl p-6">
+                        {children}
+                      </main>
+                    {/* </ShineBorder> */}
+                  </div>
+                </div>
               </Suspense>
             </TravelModeProvider>
           </AuthProvider>

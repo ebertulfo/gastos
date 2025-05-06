@@ -16,21 +16,71 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Gastos Type Organization Guide
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This document outlines the type organization strategy for the Gastos project.
 
-## Learn More
+## Type Organization Structure
 
-To learn more about Next.js, take a look at the following resources:
+The types in this project are organized in a domain-focused structure:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+  types/
+    common/         # Cross-cutting types used throughout the app
+    api/            # API-related types (requests, responses)
+    expenses/       # Domain-specific types for expenses
+    user/           # User-related types
+    ui/             # UI component types
+    data/           # Data store types
+    index.ts        # Re-exports from all modules
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Guidelines for Types
 
-## Deploy on Vercel
+1. **Centralized Types**: Define shared types in the appropriate domain folder under `src/types/`
+2. **Co-location**: Keep component-specific types with their components if they are not reused
+3. **Single Source of Truth**: Use Zod schemas for validation and export TypeScript types from them
+4. **Barrel Exports**: Use index.ts files to re-export types for simplified imports
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Common Type Import Patterns
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```typescript
+// Import specific types from a domain
+import { Expense, ExpenseCategory } from '@/types/expenses';
+
+// Import from a specific domain subfolder
+import { ExpenseService } from '@/types/expenses/services'; 
+
+// Import UI component props
+import { ChatInputProps } from '@/types/ui';
+
+// Import common utility types
+import { DateRange, SearchFilters } from '@/types/common';
+```
+
+## Interface vs. Type
+
+- Use `interface` for objects that may be extended or implemented
+- Use `type` for union types, mapped types, and types that should not be extended
+
+## Legacy Type Imports
+
+For backward compatibility, some types are re-exported from their original locations, but these are deprecated:
+
+```typescript
+// Deprecated pattern
+import { IExpenseService } from '@/interfaces/IExpenseService';
+
+// Preferred pattern
+import { ExpenseService } from '@/types/expenses';
+```
+
+## Adding New Types
+
+When adding new types:
+
+1. Identify the appropriate domain folder
+2. Create or update the types in that folder
+3. Export the types through the appropriate index.ts file
+4. Document complex types with JSDoc comments

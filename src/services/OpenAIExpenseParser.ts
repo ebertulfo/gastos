@@ -1,9 +1,9 @@
-import { IExpenseParser } from "@/interfaces/IExpenseParser";
+import { ParsedExpense, ExpenseCategory } from "@/types/expenses";
 import { z } from "zod";
-import { ParsedExpense } from "@/schemas/expense";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
+import { IExpenseParser } from "@/interfaces/IExpenseParser";
 
 export class OpenAIExpenseParser implements IExpenseParser {
   constructor(private openai: OpenAI) {}

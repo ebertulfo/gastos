@@ -1,5 +1,5 @@
 import { IExpenseService } from "@/interfaces/IExpenseService";
-import { Expense, ExpenseCategory } from "@/schemas/expense";
+import { Expense, ExpenseCategory, ExpenseService } from "@/types/expenses";
 import { createClient } from "@supabase/supabase-js";
 
 export class SupabaseExpenseService implements IExpenseService {

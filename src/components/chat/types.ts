@@ -20,7 +20,6 @@ export type OnboardingStep = {
 
 export interface ChatState {
   messages: Message[];
-  isRecording: boolean;
   isProcessing: boolean;
   onboardingData: {
     name?: string;

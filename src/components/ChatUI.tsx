@@ -1,4 +1,4 @@
-import { useChat } from "./chat/useChat";
+import { useChat } from "../hooks/useChat";
 import { MessageList } from "./chat/MessageList";
 import { ChatInput } from "./chat/ChatInput";
 import { OnboardingDialog } from "./chat/OnboardingDialog";
@@ -11,9 +11,7 @@ export function ChatUI() {
   const {
     state,
     handleSendMessage,
-    handleFileUpload,
     handleOnboardingSubmit,
-    toggleRecording,
     ONBOARDING_STEPS,
     showLoginDialog,
     setShowLoginDialog,
@@ -67,9 +65,6 @@ export function ChatUI() {
           <div className="flex-shrink-0 bg-background border-t shadow-sm">
             <ChatInput
               onSendMessage={handleSendMessage}
-              onFileUpload={handleFileUpload}
-              isRecording={state.isRecording}
-              onToggleRecording={toggleRecording}
               isProcessing={state.isProcessing}
             />
           </div>

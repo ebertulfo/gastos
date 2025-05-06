@@ -11,7 +11,31 @@ const config: Config = {
   	extend: {
   		spacing: {
   			navbar: '3.5rem', // Approximate height of navbar including padding and border
-  		},
+  		 },
+      keyframes: {
+        "shimmer": {
+          "100%": { transform: "translateX(100%)" },
+        },
+        "highlight-new": {
+          "0%": { backgroundColor: "hsl(var(--primary) / 0.2)" },
+          "50%": { backgroundColor: "hsl(var(--primary) / 0.1)" },
+          "100%": { backgroundColor: "transparent" }
+        },
+        "shine": {
+          "0%": { left: "-100%" },
+          "100%": { left: "100%" }
+        },
+        "shine-border": {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "0% 0" }
+        }
+      },
+      animation: {
+        "shimmer": "shimmer 2s infinite",
+        "highlight-new": "highlight-new 2s ease-out forwards",
+        "shine": "shine 2s ease infinite",
+        "shine-border": "shine-border 2.5s linear infinite"
+      },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

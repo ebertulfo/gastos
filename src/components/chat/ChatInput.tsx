@@ -1,32 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  // Mic, 
-  // MicOff, 
-  // PaperclipIcon, 
-  Send 
-} from "lucide-react";
-// import { 
-//   Tooltip,
-//   TooltipContent,
-//   TooltipProvider,
-//   TooltipTrigger,
-// } from "@/components/ui/tooltip";
-
-interface ChatInputProps {
-  onSendMessage: (content: string) => void;
-  onFileUpload: (file: File) => void;
-  isRecording: boolean;
-  onToggleRecording: () => void;
-  isProcessing: boolean;
-}
+import { Send } from "lucide-react";
+import { ChatInputProps } from "@/types/ui";
 
 export function ChatInput({
   onSendMessage,
-  // onFileUpload,
-  // isRecording,
-  // onToggleRecording,
   isProcessing,
 }: ChatInputProps) {
   const [message, setMessage] = useState("");

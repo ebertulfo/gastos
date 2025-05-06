@@ -1,0 +1,17 @@
+
+<svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @font-face {
+      font-family: 'Satoshi';
+      src: url('https://github.com/IndianTypeFoundry/Satoshi/raw/main/fonts/otf/Satoshi-Bold.otf') format("opentype");
+    }
+    .logo {
+      font-family: 'Satoshi', sans-serif;
+      font-weight: bold;
+      font-size: 28px;
+    }
+  </style>
+  <text x="0" y="30" class="logo">
+    <tspan fill="#FFFFFF">Gasto</tspan><tspan fill="#57C58A">$</tspan>
+  </text>
+</svg>

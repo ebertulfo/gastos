@@ -3,7 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import React from "react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
+import React, { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,17 +20,32 @@ import { TravelModeToggle } from "@/components/TravelModeToggle";
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // After component mounts, we can safely show the theme-dependent logo
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   return (
     <nav className="sticky top-0 z-50 flex justify-between items-center py-3 px-4 md:px-6 border-b shadow-sm bg-background">
-      <Link href="/" className="text-xl font-bold flex items-center gap-2 text-foreground">
-        
-        <span>Gasto$</span>
+      <Link href="/" className="flex items-center gap-2">
+        {mounted && (
+          <Image 
+            src={theme === 'dark' ? '/gastos_logo_white_green.svg' : '/gastos_logo_black_green.svg'} 
+            alt="Gastos Logo" 
+            width={160} 
+            height={80} 
+            priority
+            className="h-10 w-auto"
+          />
+        )}
       </Link>
       
       {user ? (
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-4">
+          {/* <div className="hidden md:flex items-center gap-4">
             <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Chat
             </Link>
@@ -41,9 +58,9 @@ const Navbar: React.FC = () => {
             <Link href="/telegram-bot" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Telegram Bot
             </Link>
-          </div>
+          </div> */}
           
-          <TravelModeToggle />
+          {/* <TravelModeToggle /> */}
           <ThemeToggle />
           
           <DropdownMenu>
@@ -54,7 +71,7 @@ const Navbar: React.FC = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              {/* <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="cursor-pointer">
                 <Link href="/" className="flex items-center gap-2 w-full">
                   <MessageCircle className="h-4 w-4" />
@@ -85,7 +102,7 @@ const Navbar: React.FC = () => {
                   <Settings className="h-4 w-4" />
                   <span>Settings</span>
                 </Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive">
                 <LogOut className="h-4 w-4 mr-2" />

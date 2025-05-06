@@ -9,7 +9,12 @@ export class ChatMessageService {
       .from("chat_messages")
       .select(`
         *,
-        expense:expenses(*)
+        expense:expenses(
+          *,
+          tags:expense_tags(
+            tag:tags(*)
+          )
+        )
       `)
       .eq("user_id", userId)
       .order("timestamp", { ascending: false }) // Newest messages first
@@ -26,16 +31,28 @@ export class ChatMessageService {
     
     // Convert to Message objects and reverse to maintain chronological order
     return data
-      .map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        role: msg.role,
-        timestamp: new Date(msg.timestamp),
-        action: msg.action,
-        field: msg.field,
-        attachmentUrl: msg.attachment_url,
-        expense: msg.expense,
-      }))
+      .map(msg => {
+        // Transform expense tags structure if expense exists and has tags
+        let expense = msg.expense;
+        if (expense && expense.tags && Array.isArray(expense.tags)) {
+          // Flatten the tags structure
+          expense = {
+            ...expense,
+            tags: expense.tags.map((tagWrapper: { tag: any }) => tagWrapper.tag)
+          };
+        }
+
+        return {
+          id: msg.id,
+          content: msg.content,
+          role: msg.role,
+          timestamp: new Date(msg.timestamp),
+          action: msg.action,
+          field: msg.field,
+          attachmentUrl: msg.attachment_url,
+          expense: expense,
+        };
+      })
       .reverse(); // Reverse to get chronological order (oldest first)
   }
 
@@ -72,13 +89,27 @@ export class ChatMessageService {
       })
       .select(`
         *,
-        expense:expenses(*)
+        expense:expenses(
+          *,
+          tags:expense_tags(
+            tag:tags(*)
+          )
+        )
       `)
       .single();
 
     if (error) {
       console.error("Error saving message:", error);
       throw error;
+    }
+
+    // Transform expense tags structure if expense exists and has tags
+    let expense = data.expense;
+    if (expense && expense.tags && Array.isArray(expense.tags)) {
+      expense = {
+        ...expense,
+        tags: expense.tags.map((tagWrapper: { tag: any }) => tagWrapper.tag)
+      };
     }
 
     return {
@@ -89,7 +120,7 @@ export class ChatMessageService {
       action: data.action,
       field: data.field,
       attachmentUrl: data.attachment_url,
-      expense: data.expense,
+      expense: expense,
     };
   }
 
@@ -107,13 +138,27 @@ export class ChatMessageService {
       .eq("id", messageId)
       .select(`
         *,
-        expense:expenses(*)
+        expense:expenses(
+          *,
+          tags:expense_tags(
+            tag:tags(*)
+          )
+        )
       `)
       .single();
 
     if (error) {
       console.error("Error updating message:", error);
       throw error;
+    }
+
+    // Transform expense tags structure if expense exists and has tags
+    let expense = data.expense;
+    if (expense && expense.tags && Array.isArray(expense.tags)) {
+      expense = {
+        ...expense,
+        tags: expense.tags.map((tagWrapper: { tag: any }) => tagWrapper.tag)
+      };
     }
 
     return {
@@ -124,7 +169,7 @@ export class ChatMessageService {
       action: data.action,
       field: data.field,
       attachmentUrl: data.attachment_url,
-      expense: data.expense,
+      expense: expense,
     };
   }
 

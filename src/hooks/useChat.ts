@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTravelMode } from "@/contexts/TravelModeContext";
-import { ChatState, Message, OnboardingStep } from "./types";
+import { ChatState, Message, OnboardingStep } from "../components/chat/types";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
 import { ChatMessageService } from "@/services/ChatMessageService";
@@ -77,7 +77,6 @@ export function useChat() {
   const { travelMode } = useTravelMode(); // Add travel mode context
   const [state, setState] = useState<ChatState>({
     messages: [],
-    isRecording: false,
     isProcessing: false,
     onboardingData: {},
     currentStep: 0,
@@ -435,130 +434,6 @@ export function useChat() {
     }
   }, [user, addMessage, toast, setShowLoginDialog, getChatService, travelMode]);
 
-  const handleFileUpload = useCallback(async (file: File) => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "Please log in to upload files.",
-        variant: "destructive",
-      });
-      setShowLoginDialog(true);
-      return;
-    }
-
-    setState(prev => ({ ...prev, isProcessing: true }));
-
-    try {
-      const previewUrl = URL.createObjectURL(file);
-
-      // Add user's message with the attachment
-      await addMessage({
-        content: "Uploaded image", // Change from "Processing receipt..." to just "Uploaded image"
-        role: "user",
-        attachmentUrl: previewUrl,
-      });
-
-      /* OCR processing temporarily disabled
-      const chatService = await getChatService();
-      if (!chatService) {
-        throw new Error("Failed to initialize chat service");
-      }
-
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-
-        try {
-          const response = await fetch("/api/messages/web", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${authTokenRef.current}`,
-            },
-            body: JSON.stringify({
-              user_id: user.uid,
-              file: base64Data,
-              currency: user.currency || "USD",
-              travel_mode: travelMode,
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to process receipt");
-          }
-
-          const data = await response.json();
-
-          // Add the assistant's response
-          await addMessage({
-            content: data.message || data.reply,
-            role: "assistant",
-            action: data.action,
-            expense: data.expense,
-          });
-        } catch (error) {
-          console.error("Error processing file:", error);
-          
-          // Add an error message from assistant
-          await addMessage({
-            content: error instanceof Error 
-              ? `Error: ${error.message}` 
-              : "Failed to process the receipt. Please try again or manually enter the expense details.",
-            role: "assistant",
-          });
-          
-          toast({
-            title: "Error",
-            description: error instanceof Error 
-              ? error.message 
-              : "Failed to process receipt. Please try again.",
-            variant: "destructive",
-          });
-        }
-      };
-
-      reader.onerror = async () => {
-        // Handle file reading errors
-        await addMessage({
-          content: "Failed to read the file. Please try again with a different image.",
-          role: "assistant",
-        });
-        
-        toast({
-          title: "Error",
-          description: "Failed to read the image file.",
-          variant: "destructive",
-        });
-      };
-      */
-      
-      // Add a placeholder message instead of OCR processing
-      await addMessage({
-        content: "OCR processing is temporarily disabled. Please enter expense details manually.",
-        role: "assistant",
-      });
-      
-    } catch (error) {
-      console.error("Error processing file:", error);
-      
-      // Add an error message from assistant
-      await addMessage({
-        content: "There was a problem with your file upload. OCR processing is currently disabled.",
-        role: "assistant",
-      });
-      
-      toast({
-        title: "Notice",
-        description: "OCR processing is temporarily disabled. Please enter expense details manually.",
-      });
-    } finally {
-      setState(prev => ({ ...prev, isProcessing: false }));
-    }
-  }, [user, addMessage, toast, setShowLoginDialog, getChatService, travelMode]);
-
   const handleOnboardingSubmit = useCallback((field: string, value: string) => {
     setState(prev => {
       const newStepIndex = field ? prev.currentStep + 1 : 0;
@@ -574,10 +449,6 @@ export function useChat() {
         showOnboarding: isWithinBounds,
       };
     });
-  }, []);
-
-  const toggleRecording = useCallback(() => {
-    setState(prev => ({ ...prev, isRecording: !prev.isRecording }));
   }, []);
 
   const updateMessageInState = useCallback((updatedMessage: Message) => {
@@ -629,9 +500,7 @@ export function useChat() {
     state,
     addMessage,
     handleSendMessage,
-    handleFileUpload,
     handleOnboardingSubmit,
-    toggleRecording,
     ONBOARDING_STEPS,
     showLoginDialog,
     setShowLoginDialog,
