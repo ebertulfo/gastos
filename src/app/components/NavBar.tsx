@@ -3,7 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import React from "react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
+import React, { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,18 +14,42 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Home, BarChart2, BotIcon, Settings, MessageCircle } from "lucide-react";
+import { User, LogOut, Home, BarChart2, Settings, MessageCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TravelModeToggle } from "@/components/TravelModeToggle";
+import { LoginDialog } from "@/components/LoginDialog";
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Determine which logo to use based on theme
+  const logoSrc = mounted && (theme === 'dark' || resolvedTheme === 'dark') 
+    ? "/gastos_logo_white_green_inline.svg" 
+    : "/gastos_logo_black_green_inline.svg";
   
   return (
     <nav className="sticky top-0 z-50 flex justify-between items-center py-3 px-4 md:px-6 border-b shadow-sm bg-background">
       <Link href="/" className="text-xl font-bold flex items-center gap-2 text-foreground">
-        
-        <span>Gasto$</span>
+        {mounted ? (
+          <Image 
+            src={logoSrc} 
+            alt="Gastos Logo" 
+            width={120} 
+            height={32} 
+            className="h-8 w-auto"
+            priority
+          />
+        ) : (
+          <span>Gasto$</span>
+        )}
       </Link>
       
       {user ? (
@@ -37,9 +63,6 @@ const Navbar: React.FC = () => {
             </Link>
             <Link href="/expenses" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Expenses
-            </Link>
-            <Link href="/telegram-bot" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Telegram Bot
             </Link>
           </div>
           
@@ -73,12 +96,6 @@ const Navbar: React.FC = () => {
                   <span>Expenses</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link href="/telegram-bot" className="flex items-center gap-2 w-full">
-                  <BotIcon className="h-4 w-4" />
-                  <span>Telegram Bot</span>
-                </Link>
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="cursor-pointer">
                 <Link href="/profile" className="flex items-center gap-2 w-full">
@@ -97,9 +114,18 @@ const Navbar: React.FC = () => {
       ) : (
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Link href="/sign-in">
-            <Button variant="outline" size="sm">Sign In</Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowLoginDialog(true)}
+          >
+            Sign In
+          </Button>
+          
+          <LoginDialog
+            isOpen={showLoginDialog}
+            onClose={() => setShowLoginDialog(false)}
+          />
         </div>
       )}
     </nav>

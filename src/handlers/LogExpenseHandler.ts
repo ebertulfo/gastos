@@ -28,7 +28,7 @@ export class LogExpenseHandler implements IExpenseHandler {
     );
   }
 
-  async handle(telegram_user_id: string, message: string): Promise<APIResponse> {
+  async handle(message: string): Promise<APIResponse> {
     const parsedExpense = await this.expenseParser.parseExpense(message);
 
     if (!parsedExpense.amount || !parsedExpense.description) {
@@ -40,7 +40,6 @@ export class LogExpenseHandler implements IExpenseHandler {
 
     const expenseData = {
       ...parsedExpense,
-      telegram_user_id,
       created_at: new Date().toISOString(),
     };
 

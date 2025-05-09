@@ -14,7 +14,7 @@ export interface Message {
 export type OnboardingStep = {
   id: string;
   question: string;
-  field: "name" | "country" | "currency" | "telegram_id";
+  field: "name" | "country" | "currency";
   required: boolean;
 };
 
@@ -26,7 +26,6 @@ export interface ChatState {
     name?: string;
     country?: string;
     currency?: string;
-    telegram_id?: string;
   };
   currentStep: number;
   showOnboarding: boolean;

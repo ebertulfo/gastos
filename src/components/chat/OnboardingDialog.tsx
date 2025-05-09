@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OnboardingStep } from "./types";
 import { CountryCodeCombobox } from "@/components/ui/country-code-select";
 import { CurrencyCodeCombobox } from "@/components/ui/currency-code-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 interface OnboardingDialogProps {
   step: OnboardingStep;
@@ -20,12 +21,51 @@ export function OnboardingDialog({
   onOpenChange,
 }: OnboardingDialogProps) {
   const [value, setValue] = useState("");
+  const [isDetecting, setIsDetecting] = useState(false);
+
+  useEffect(() => {
+    // Reset the value when step changes
+    setValue("");
+    
+    // Try to load existing value from localStorage
+    const savedValue = localStorage.getItem(step.field);
+    if (savedValue) {
+      setValue(savedValue);
+      return;
+    }
+
+    // If country or currency not set and not already detecting, attempt to detect them
+    if ((step.field === "country" || step.field === "currency") && !savedValue && !isDetecting) {
+      detectCountryAndCurrency();
+    }
+  }, [step.field]);
+
+  const detectCountryAndCurrency = async () => {
+    try {
+      setIsDetecting(true);
+      const response = await fetch("https://ipapi.co/json/");
+      const data = await response.json();
+      
+      if (step.field === "country" && data.country_name) {
+        setValue(data.country_name);
+        localStorage.setItem("country", data.country_name);
+      } else if (step.field === "currency" && data.currency) {
+        setValue(data.currency);
+        localStorage.setItem("currency", data.currency);
+      }
+    } catch (error) {
+      console.error("Failed to detect country and currency", error);
+    } finally {
+      setIsDetecting(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (value) {
+      // Save to localStorage before submitting
+      localStorage.setItem(step.field, value);
       onSubmit(value);
-      setValue("");
     }
   };
 
@@ -40,12 +80,12 @@ export function OnboardingDialog({
           {step.field === "country" ? (
             <CountryCodeCombobox
               value={value}
-              onChange={setValue}
+              onChange={(newValue) => setValue(newValue)}
             />
           ) : step.field === "currency" ? (
             <CurrencyCodeCombobox
               value={value}
-              onChange={setValue}
+              onChange={(newValue) => setValue(newValue)}
             />
           ) : (
             <Input
@@ -57,11 +97,18 @@ export function OnboardingDialog({
             />
           )}
           
-          <Button type="submit" className="w-full" disabled={!value}>
-            Next
+          <Button type="submit" className="w-full" disabled={!value || isDetecting}>
+            {isDetecting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Detecting...
+              </>
+            ) : (
+              "Next"
+            )}
           </Button>
         </form>
       </DialogContent>
     </Dialog>
   );
-} 
+}

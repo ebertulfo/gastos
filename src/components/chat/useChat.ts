@@ -63,12 +63,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     field: "currency",
     required: true,
   },
-  {
-    id: "telegram_id",
-    question: "What's your Telegram ID? (optional)",
-    field: "telegram_id",
-    required: false,
-  },
 ];
 
 export function useChat() {
@@ -85,7 +79,7 @@ export function useChat() {
   });
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false); // Initialize to false by default
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const welcomeMessagesShownRef = useRef(false);
 
@@ -165,6 +159,14 @@ export function useChat() {
         return;
       } else {
         try {
+          // Check if user needs onboarding and show the dialog
+          if (user && user.is_onboarded === false) {
+            setState(prev => ({
+              ...prev,
+              showOnboarding: true
+            }));
+          }
+          
           const chatService = await getChatService();
           if (!chatService) {
             throw new Error("Failed to initialize chat service");
@@ -188,7 +190,8 @@ export function useChat() {
                 messages: messages,
               }));
               
-              setHasMoreMessages(currentOffsetRef.current < totalCount);
+              // Only set hasMoreMessages to true if there are more messages to load
+              setHasMoreMessages(currentOffsetRef.current < totalMessageCountRef.current);
             }
           } else {
             // If user is logged in but has no messages, show welcome messages
@@ -196,6 +199,8 @@ export function useChat() {
             if (!welcomeMessagesShownRef.current) {
               showWelcomeMessages();
             }
+            // Ensure hasMoreMessages is false when there are no messages
+            setHasMoreMessages(false);
           }
         } catch (error) {
           console.error("Error loading messages:", error);
@@ -212,8 +217,6 @@ export function useChat() {
           }
         }
       }
-
-      
     }
 
     recentlySentMessages.current.clear();
@@ -282,6 +285,8 @@ export function useChat() {
     currentOffsetRef.current = 0;
     // Reset welcome messages shown status when user changes
     welcomeMessagesShownRef.current = false;
+    // Also reset hasMoreMessages when user changes
+    setHasMoreMessages(false);
   }, [user]);
 
   const addMessage = useCallback(async (message: Omit<Message, "id" | "timestamp">) => {
@@ -559,22 +564,70 @@ export function useChat() {
     }
   }, [user, addMessage, toast, setShowLoginDialog, getChatService, travelMode]);
 
-  const handleOnboardingSubmit = useCallback((field: string, value: string) => {
+  const handleOnboardingSubmit = useCallback(async (field: string, value: string) => {
     setState(prev => {
       const newStepIndex = field ? prev.currentStep + 1 : 0;
       const isWithinBounds = newStepIndex < ONBOARDING_STEPS.length;
 
+      const updatedOnboardingData = {
+        ...prev.onboardingData,
+        ...(field ? { [field]: value } : {})
+      };
+
+      // If we're at the last step and a field was submitted,
+      // we need to update the user's profile in the database
+      if (field && newStepIndex >= ONBOARDING_STEPS.length && user) {
+        // Save all onboarding data to database
+        (async () => {
+          try {
+            const { error } = await supabase
+              .from("user_profiles")
+              .upsert({
+                id: user.uid,
+                full_name: updatedOnboardingData.name,
+                country: updatedOnboardingData.country,
+                currency: updatedOnboardingData.currency,
+                is_onboarded: true,
+                updated_at: new Date().toISOString(),
+              });
+            
+            if (error) {
+              throw error;
+            }
+
+            // Add feedback message to chat
+            addMessage({
+              content: `Thanks ${updatedOnboardingData.name}! Your profile has been set up. You can now start tracking your expenses.`,
+              role: "assistant",
+            });
+
+            // Remove the additional welcome messages that cause duplication
+            // We'll rely on the initial welcome messages instead
+
+            // Save preferences to localStorage as backup
+            localStorage.setItem("name", updatedOnboardingData.name || "");
+            localStorage.setItem("country", updatedOnboardingData.country || "");
+            localStorage.setItem("currency", updatedOnboardingData.currency || "");
+
+          } catch (error) {
+            console.error("Error updating profile:", error);
+            toast({
+              title: "Error",
+              description: "Failed to save your profile information. Please try again.",
+              variant: "destructive",
+            });
+          }
+        })();
+      }
+
       return {
         ...prev,
-        onboardingData: {
-          ...prev.onboardingData,
-          ...(field ? { [field]: value } : {}),
-        },
+        onboardingData: updatedOnboardingData,
         currentStep: isWithinBounds ? newStepIndex : 0,
         showOnboarding: isWithinBounds,
       };
     });
-  }, []);
+  }, [user, toast, addMessage]);
 
   const toggleRecording = useCallback(() => {
     setState(prev => ({ ...prev, isRecording: !prev.isRecording }));

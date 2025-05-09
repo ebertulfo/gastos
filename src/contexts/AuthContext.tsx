@@ -11,7 +11,6 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 interface ExtendedUser {
   uid: string;
   email: string | null;
-  telegram_id?: number | null;
   is_onboarded: boolean;
   currency?: string | null;
 }
@@ -58,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setUser({
             uid: supabaseUser.id,
             email: supabaseUser.email || null,
-            telegram_id: profile?.telegram_id || null,
             is_onboarded: profile?.is_onboarded || false,
             currency: profile?.currency || null,
           });
@@ -108,10 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
         
-        if (user.is_onboarded === false && pathname !== "/onboarding") {
-          router.push("/onboarding");
-          return;
-        }
+        // We're removing the redirect to /onboarding page
+        // and will rely on the chat-based onboarding dialog instead
+        // if (user.is_onboarded === false && pathname !== "/onboarding") {
+        //   router.push("/onboarding");
+        //   return;
+        // }
       } 
       // User is not logged in
       else {

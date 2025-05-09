@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import useProtectedRoute from "@/hooks/useProtectedRoute";
-import { Loader2, User, AtSign, MapPin, DollarSign, BotIcon } from "lucide-react";
+import { Loader2, User, AtSign, MapPin, DollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +22,6 @@ const profileSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }).optional(),
   country: z.string().min(2, { message: "Please select your country" }),
   currency: z.string().min(1, { message: "Please select your currency" }),
-  telegram_id: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -42,7 +41,6 @@ export default function ProfilePage() {
       email: user?.email || "",
       country: "",
       currency: "",
-      telegram_id: "",
     },
   });
 
@@ -69,7 +67,6 @@ export default function ProfilePage() {
           form.setValue("email", user.email || "");
           form.setValue("country", data.country || "");
           form.setValue("currency", data.currency || "");
-          form.setValue("telegram_id", data.telegram_id || "");
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -108,7 +105,6 @@ export default function ProfilePage() {
           full_name: data.name,
           country: data.country,
           currency: data.currency,
-          telegram_id: data.telegram_id || null,
           updated_at: new Date().toISOString(),
         });
 
@@ -235,26 +231,6 @@ export default function ProfilePage() {
                   )}
                 />
               </div>
-              
-              <FormField
-                control={form.control}
-                name="telegram_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telegram ID</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center">
-                        <BotIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <Input {...field} placeholder="Your Telegram ID (optional)" />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Connect your Telegram account to use our expense tracking bot
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               
               <CardFooter className="flex justify-end px-0 pb-0">
                 <Button type="submit" disabled={submitting}>

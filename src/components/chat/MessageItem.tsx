@@ -95,15 +95,22 @@ export function MessageItem({
       // Delete the expense from the database
       await expenseService.delete(expenseId);
       
-      // Update the message to no longer reference the expense
+      // Update the message to indicate the expense was deleted
       if (message.id) {
-        // Update the message to no longer reference the expense
+        // Save the expense details before removing it
+        const expenseDescription = message.expense?.description || "expense";
+        const expenseAmount = message.expense?.amount || 0;
+        const expenseCurrency = message.expense?.currency || "USD";
+        
+        // Update the message to clearly indicate the expense was deleted
+        // Set expense to undefined instead of null to match the expected type
         const updatedMessage = await chatService.updateMessage(message.id, {
-          expense: undefined,
-          content: "Expense has been deleted."
+          expense: undefined, // Use undefined to properly type-check
+          content: `Expense deleted: ${expenseAmount} ${expenseCurrency} for "${expenseDescription}"`
         });
         
-        // Update the message in the local state
+        // Update the message in the local state with the modified message
+        // This ensures the UI will show the deletion message instead of the expense component
         updateMessageInState(updatedMessage);
       }
       
@@ -119,7 +126,7 @@ export function MessageItem({
         variant: "destructive",
       });
     }
-  }, [message.id, updateMessageInState, getChatService, toast]);
+  }, [message.id, updateMessageInState, getChatService, toast, message.expense]);
 
   return (
     <div 

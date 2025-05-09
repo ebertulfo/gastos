@@ -41,10 +41,6 @@ export class ExpenseService implements IExpenseService {
       newExpense.user_id = data.user_id;
     }
     
-    if (data.telegram_user_id) {
-      newExpense.telegram_user_id = data.telegram_user_id;
-    }
-    
     // Add currency if specified
     if (data.currency) {
       newExpense.currency = data.currency;

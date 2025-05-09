@@ -31,8 +31,7 @@ export const ExpenseSchema = z.object({
   date: z.union([z.string(), z.date()]).optional(),
   description: z.string().optional(),
   
-  // User identification properties
-  telegram_user_id: z.string().optional(),
+  // User identification property
   user_id: z.string().optional(),
   
   // Timestamp properties
@@ -49,7 +48,6 @@ export const ExpenseSchema = z.object({
 // Define the OpenAI-specific schema by omitting fields
 export const OpenAIExpenseSchema = ExpenseSchema.omit({
   id: true,
-  telegram_user_id: true,
   date: true,
   is_travel_expense: true,
   travel_currency: true,
@@ -79,7 +77,7 @@ export const QueryExpenseSchema = z.object({
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   category: z.enum(OpenAiAllowedCategories),
-  telegram_user_id: z.string(),
+  user_id: z.string(),
 });
 
 export type QueryExpense = z.infer<typeof QueryExpenseSchema>;

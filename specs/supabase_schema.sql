@@ -1,4 +1,4 @@
--- Supabase Schema Setup
+-- Supabase Schema Setup (Updated: 2025-05-09)
 
 -- Enable RLS (Row-Level Security) for all tables
 alter table auth.users enable row level security;
@@ -6,12 +6,18 @@ alter table auth.users enable row level security;
 -- User Profiles Table
 create table if not exists public.user_profiles (
   id uuid references auth.users(id) primary key,
-  email text,
-  telegram_id text,
-  telegramLinked boolean default false,
-  onboarded boolean default false,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  updated_at timestamptz default (now() AT TIME ZONE 'utc'),
+  username text unique check (char_length(username) >= 3),
+  full_name text,
+  avatar_url text,
+  website text,
+  telegram_id integer,
+  is_onboarded boolean default false not null,
+  created_at timestamptz default (now() AT TIME ZONE 'utc'),
+  country text,
+  currency text,
+  timezone text,
+  is_anonymous boolean
 );
 
 -- Enable RLS on user_profiles
@@ -30,18 +36,18 @@ create policy "Users can update their own profile"
 create table if not exists public.expenses (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users(id),
-  amount decimal not null,
+  amount numeric not null,
   description text,
   category text,
   date timestamptz default now(),
-  createdAt timestamptz default now(),
+  created_at timestamptz default now(),
   currency text default 'USD',
-  telegram_user_id text
+  telegram_user_id text,
+  exchange_rate numeric,
+  is_travel_expense boolean default false,
+  travel_currency text,
+  original_amount numeric
 );
-
--- Add exchange_rate column to expenses table
-alter table public.expenses
-add column if not exists exchange_rate numeric;
 
 -- Enable RLS on expenses
 alter table public.expenses enable row level security;
@@ -77,6 +83,37 @@ create table if not exists public.auth_tokens (
   telegram_user_id text not null,
   created_at timestamptz default now(),
   expires_at timestamptz not null
+);
+
+-- Chat Messages Table
+create table if not exists public.chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) not null,
+  content text not null,
+  role text check (role = ANY (ARRAY['user', 'assistant'])) not null,
+  timestamp timestamptz default now() not null,
+  action text,
+  field text,
+  attachment_url text,
+  expense_id uuid references public.expenses(id),
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+-- Tags Table
+create table if not exists public.tags (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.user_profiles(id),
+  name text not null,
+  display text not null,
+  created_at timestamp default now()
+);
+
+-- Expense Tags Table (many-to-many for expenses and tags)
+create table if not exists public.expense_tags (
+  expense_id uuid references public.expenses(id) not null,
+  tag_id uuid references public.tags(id) not null,
+  primary key (expense_id, tag_id)
 );
 
 -- Index for faster lookup

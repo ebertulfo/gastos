@@ -94,16 +94,25 @@ export class ChatMessageService {
   }
 
   async updateMessage(messageId: string, updates: Partial<Message>): Promise<Message> {
+    // Handle the case where expense is explicitly set to undefined (indicating deletion)
+    // We need to explicitly set expense_id to null in the database
+    const updateData: any = {
+      content: updates.content,
+      action: updates.action,
+      field: updates.field,
+      attachment_url: updates.attachmentUrl,
+      updated_at: new Date().toISOString(),
+    };
+    
+    // If expense is explicitly undefined in the updates, set expense_id to null
+    // Otherwise, use the expense ID if it exists
+    if ('expense' in updates) {
+      updateData.expense_id = updates.expense?.id || null;
+    }
+    
     const { data, error } = await supabase
       .from("chat_messages")
-      .update({
-        content: updates.content,
-        action: updates.action,
-        field: updates.field,
-        attachment_url: updates.attachmentUrl,
-        expense_id: updates.expense?.id,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", messageId)
       .select(`
         *,

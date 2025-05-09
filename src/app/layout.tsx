@@ -26,6 +26,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Gastos Expense Tracker",
   description: "Track your expenses effortlessly",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
