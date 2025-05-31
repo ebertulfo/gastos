@@ -199,7 +199,7 @@ export function MessageList({
         messagesEndRef.current?.scrollIntoView();
       }, 300);
     }
-  }, []); // Only run on mount
+  }, [messages.length]); // Include messages.length in dependency array
 
   // Add a global handler to fix any potential scroll lock issues
   useEffect(() => {

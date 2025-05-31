@@ -14,10 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Home, BarChart2, Settings, MessageCircle } from "lucide-react";
+import { User, LogOut, Settings, MessageCircle, Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TravelModeToggle } from "@/components/TravelModeToggle";
 import { LoginDialog } from "@/components/LoginDialog";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { SpendingSidebar } from "@/components/SpendingSidebar";
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -54,16 +56,21 @@ const Navbar: React.FC = () => {
       
       {user ? (
         <div className="flex items-center gap-4">
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="mr-2">
+                  <Menu className="h-4 w-4" />
+                  <span className="sr-only">Toggle sidebar</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-72">
+                <SpendingSidebar />
+              </SheetContent>
+            </Sheet>
+          </div>
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Chat
-            </Link>
-            <Link href="/dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/expenses" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Expenses
-            </Link>
+            {/* Empty placeholder for future nav items */}
           </div>
           
           <TravelModeToggle />
@@ -82,18 +89,6 @@ const Navbar: React.FC = () => {
                 <Link href="/" className="flex items-center gap-2 w-full">
                   <MessageCircle className="h-4 w-4" />
                   <span>Chat</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link href="/dashboard" className="flex items-center gap-2 w-full">
-                  <Home className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link href="/expenses" className="flex items-center gap-2 w-full">
-                  <BarChart2 className="h-4 w-4" />
-                  <span>Expenses</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

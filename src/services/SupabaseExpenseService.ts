@@ -6,6 +6,9 @@ export class SupabaseExpenseService implements IExpenseService {
   private supabase;
 
   constructor(authToken?: string) {
+    // Log if we're initializing with a token for debugging
+    console.log("SupabaseExpenseService init with auth token:", authToken ? "present" : "missing");
+    
     this.supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -61,6 +64,8 @@ export class SupabaseExpenseService implements IExpenseService {
       newExpense.exchange_rate = data.exchange_rate;
     }
 
+    console.log('Attempting to create expense:', { expenseData: newExpense });
+
     const { data: createdExpense, error } = await this.supabase
       .from("expenses")
       .insert(newExpense)
@@ -68,10 +73,17 @@ export class SupabaseExpenseService implements IExpenseService {
       .single();
 
     if (error) {
-      console.log('@@@ ERROR CREATING EXPENSE', error)
+      console.error('@@@ ERROR CREATING EXPENSE', error);
+      console.error('Error details:', {
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        message: error.message
+      });
       throw new Error(`Error creating expense: ${error.message}`);
     }
 
+    console.log('Successfully created expense:', createdExpense);
     return createdExpense as Expense;
   }
 
@@ -180,11 +192,15 @@ export class SupabaseExpenseService implements IExpenseService {
       query = query.eq("category", category);
     }
 
+    console.log("Query constructed, executing with order by date...");
     const { data, error } = await query.order("date", { ascending: false });
 
     if (error) {
+      console.error("Supabase query error:", error);
       throw new Error(`Error fetching expenses: ${error.message}`);
     }
+
+    console.log(`Retrieved ${data?.length || 0} expense records from Supabase`);
 
     return (data || []).map(expense => ({
       ...expense,

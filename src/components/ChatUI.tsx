@@ -44,7 +44,7 @@ export function ChatUI() {
   }, [setShowLoginDialog]);
 
   return (
-    <div className="flex flex-col h-full w-full max-w-[640px] mx-auto">
+    <div className="flex flex-col h-full w-full max-w-[640px] mx-auto px-4 md:px-0">
       {isLoading ? (
         <div className="flex items-center justify-center h-full w-full">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

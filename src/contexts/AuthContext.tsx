@@ -7,6 +7,7 @@ import { AuthChangeEvent } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { OnboardingDialog } from "@/components/OnboardingDialog";
 
 interface ExtendedUser {
   uid: string;
@@ -20,6 +21,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   updateLoggedInUser: (user: ExtendedUser | null) => void;
+  showOnboarding: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const pathname = usePathname();
 
   // Handle authentication setup
@@ -48,30 +51,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const setupSession = async () => {
       try {
+        setLoading(true);
         const { data: session } = await supabase.auth.getSession();
 
         if (session?.session) {
           const supabaseUser = session.session.user;
           const profile = await fetchUserProfile(supabaseUser.id);
           
+          const userIsOnboarded = profile?.is_onboarded || false;
+          
           setUser({
             uid: supabaseUser.id,
             email: supabaseUser.email || null,
-            is_onboarded: profile?.is_onboarded || false,
+            is_onboarded: userIsOnboarded,
             currency: profile?.currency || null,
           });
+          
+          // Set onboarding dialog visibility based on onboarding status
+          setShowOnboarding(!userIsOnboarded);
         } else {
           setUser(null);
-          // Redirect to sign in if not on a public path
-          const publicPaths = ["/sign-in", "/sign-up", "/"];
-          if (!publicPaths.includes(pathname)) {
-            router.push("/sign-in");
-          }
+          setShowOnboarding(false);
+          // We'll handle redirects in the useEffect below
         }
-        
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching user session:", error);
+        setUser(null);
+      } finally {
         setLoading(false);
       }
     };
@@ -102,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // User is logged in
       if (user) {
         if (pathname === "/sign-in" || pathname === "/sign-up") {
-          router.push("/dashboard");
+          router.push("/track");
           return;
         }
         
@@ -148,16 +154,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateLoggedInUser = (updatedUser: ExtendedUser | null) => {
     setUser(updatedUser);
+    if (updatedUser && updatedUser.is_onboarded) {
+      setShowOnboarding(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, updateLoggedInUser }}>
+    <AuthContext.Provider value={{ user, loading, signOut, updateLoggedInUser, showOnboarding }}>
       {loading ? (
         <div className="flex items-center justify-center min-h-screen">
           <LoadingScreen />
         </div>
       ) : (
-        children
+        <>
+          {user && !user.is_onboarded && <OnboardingDialog isOpen={true} />}
+          {children}
+        </>
       )}
     </AuthContext.Provider>
   );

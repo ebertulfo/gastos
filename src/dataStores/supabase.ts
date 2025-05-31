@@ -37,6 +37,11 @@ export class SupabaseStore implements DataStore {
       .single();
 
     if (error) {
+      // PGRST116 is "The result contains no rows" error code from PostgREST
+      if (error.code === 'PGRST116') {
+        return null; // Return null when no profile exists
+      }
+      console.log("Error fetching user profile:", error);
       throw new Error(error.message);
     }
 

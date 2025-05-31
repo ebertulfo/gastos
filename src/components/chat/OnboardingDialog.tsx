@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { OnboardingStep } from "./types";
 import { CountryCodeCombobox } from "@/components/ui/country-code-select";
 import { CurrencyCodeCombobox } from "@/components/ui/currency-code-select";
@@ -23,24 +23,7 @@ export function OnboardingDialog({
   const [value, setValue] = useState("");
   const [isDetecting, setIsDetecting] = useState(false);
 
-  useEffect(() => {
-    // Reset the value when step changes
-    setValue("");
-    
-    // Try to load existing value from localStorage
-    const savedValue = localStorage.getItem(step.field);
-    if (savedValue) {
-      setValue(savedValue);
-      return;
-    }
-
-    // If country or currency not set and not already detecting, attempt to detect them
-    if ((step.field === "country" || step.field === "currency") && !savedValue && !isDetecting) {
-      detectCountryAndCurrency();
-    }
-  }, [step.field]);
-
-  const detectCountryAndCurrency = async () => {
+  const detectCountryAndCurrency = useCallback(async () => {
     try {
       setIsDetecting(true);
       const response = await fetch("https://ipapi.co/json/");
@@ -58,7 +41,24 @@ export function OnboardingDialog({
     } finally {
       setIsDetecting(false);
     }
-  };
+  }, [step.field]);
+
+  useEffect(() => {
+    // Reset the value when step changes
+    setValue("");
+    
+    // Try to load existing value from localStorage
+    const savedValue = localStorage.getItem(step.field);
+    if (savedValue) {
+      setValue(savedValue);
+      return;
+    }
+
+    // If country or currency not set and not already detecting, attempt to detect them
+    if ((step.field === "country" || step.field === "currency") && !savedValue && !isDetecting) {
+      detectCountryAndCurrency();
+    }
+  }, [step.field, detectCountryAndCurrency, isDetecting]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

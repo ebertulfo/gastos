@@ -52,7 +52,7 @@ export const getUserExpenses = async (
         .lte("date", dateRange.end.toISOString());
     }
 
-    const { data, error } = await query.order("date", { ascending: false });
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error) throw error;
 

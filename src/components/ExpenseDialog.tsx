@@ -316,19 +316,6 @@ export function ExpenseDialog({
               />
             </div>
             
-            {/* Add currency selection */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="currency" className="text-right">
-                Currency
-              </Label>
-              <div className="col-span-3">
-                <CurrencyCodeCombobox
-                  value={expense.currency || DEFAULT_CURRENCY}
-                  onChange={(value) => setExpense(prev => ({ ...prev, currency: value }))}
-                />
-              </div>
-            </div>
-            
             {/* Add travel expense toggle */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">

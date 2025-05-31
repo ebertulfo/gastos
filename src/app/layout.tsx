@@ -52,7 +52,7 @@ export default function RootLayout({
                 <Navbar />
               </Suspense>
               <Suspense fallback={<div className="flex justify-center items-center h-[calc(100vh-3.5rem)]">Loading application...</div>}>
-                <main className="w-[360px] md:w-[700px] lg:w-[960px] xl:w-[1200px] mx-auto">
+                <main className="w-full mx-auto">
                   {children}
                 </main>
               </Suspense>

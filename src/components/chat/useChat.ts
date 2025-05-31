@@ -562,7 +562,7 @@ export function useChat() {
     } finally {
       setState(prev => ({ ...prev, isProcessing: false }));
     }
-  }, [user, addMessage, toast, setShowLoginDialog, getChatService, travelMode]);
+  }, [user, addMessage, toast, setShowLoginDialog]);
 
   const handleOnboardingSubmit = useCallback(async (field: string, value: string) => {
     setState(prev => {

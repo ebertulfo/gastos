@@ -96,7 +96,7 @@ export class ChatMessageService {
   async updateMessage(messageId: string, updates: Partial<Message>): Promise<Message> {
     // Handle the case where expense is explicitly set to undefined (indicating deletion)
     // We need to explicitly set expense_id to null in the database
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       content: updates.content,
       action: updates.action,
       field: updates.field,
