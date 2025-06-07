@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Expense } from '@/schemas/expense';
 import { SupabaseExpenseService } from '@/services/SupabaseExpenseService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useExpenseRefresh } from '@/contexts/ExpenseContext';
 import { Period } from '@/enums/Period';
 import { convertPeriodToDateRange } from '@/lib/helpers/filter';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +29,7 @@ export function useExpenses(options: UseExpensesOptions = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { subscribeToRefresh } = useExpenseRefresh();
   const hasInitializedRef = useRef(false);
   // Create a stable reference to the expense service - we'll set it in useEffect when we have access to the session
   const expenseServiceRef = useRef<SupabaseExpenseService | null>(null);
@@ -223,6 +225,17 @@ export function useExpenses(options: UseExpensesOptions = {}) {
       fetchExpenses();
     }
   }, [autoFetch, fetchExpenses, user?.uid]);
+
+  // Subscribe to expense refresh events from context
+  useEffect(() => {
+    const unsubscribe = subscribeToRefresh(() => {
+      if (user?.uid && autoFetch) {
+        fetchExpenses();
+      }
+    });
+
+    return unsubscribe;
+  }, [subscribeToRefresh, fetchExpenses, user?.uid, autoFetch]);
 
   return {
     expenses,

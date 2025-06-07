@@ -139,7 +139,7 @@ export function MessageItem({
           <Icon className="w-5 h-5 text-primary" />
         </div>
         
-        <Card className={`p-4 relative ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"} ${message.action === "onboarding" ? "cursor-pointer hover:bg-accent transition-colors" : ""} shadow-sm`}
+        <Card className={`p-5 relative ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"} ${message.action === "onboarding" ? "cursor-pointer hover:bg-accent transition-colors" : ""} shadow-sm`}
           onClick={message.action === "onboarding" ? props.onClick : undefined}>
           {/* Delete button - only show on hover */}
           {onDelete && (
@@ -148,7 +148,7 @@ export function MessageItem({
                 e.stopPropagation(); // Prevent triggering card onClick
                 onDelete();
               }}
-              className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-500 transition-opacity" // Adjusted position
+              className="absolute top-0 right-0 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-500 transition-opacity" // Adjusted position
               title="Delete message"
             >
               <Trash2 className="w-4 h-4" />

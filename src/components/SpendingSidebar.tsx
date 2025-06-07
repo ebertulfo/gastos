@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExpensesList } from '@/components/ExpensesList';
 import { Expense } from '@/schemas/expense';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function SpendingSidebar() {
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
@@ -46,6 +47,11 @@ export function SpendingSidebar() {
     period: Period.ThisMonth,
     autoFetch: true
   });
+
+  const {
+    user
+  }
+  = useAuth(); // Assuming you have an AuthContext to get the current user
   
   const { formatAmount } = useCurrencyFormatter();
   
@@ -114,8 +120,8 @@ export function SpendingSidebar() {
   };
   
   return (
-    <div className="w-64 border-r h-[calc(100vh-3.5rem)] p-4 flex flex-col gap-4 bg-background">
-      <h2 className="text-xl font-bold">Spending Summary</h2>
+    <div className="w-64 border-r h-full p-4 flex flex-col gap-4 bg-background">
+      <h2 className="text-xl font-bold">Hello, {user?.name || 'you'}!</h2>
       
       {/* Today's expenses */}
       <Card 

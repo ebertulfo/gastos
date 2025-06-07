@@ -7,13 +7,13 @@ import { AuthChangeEvent } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { OnboardingDialog } from "@/components/OnboardingDialog";
 
 interface ExtendedUser {
   uid: string;
   email: string | null;
   is_onboarded: boolean;
   currency?: string | null;
+  name?: string | null;
 }
 
 interface AuthContextType {
@@ -65,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             email: supabaseUser.email || null,
             is_onboarded: userIsOnboarded,
             currency: profile?.currency || null,
+            name: profile?.full_name || null,
           });
           
           // Set onboarding dialog visibility based on onboarding status
@@ -108,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // User is logged in
       if (user) {
         if (pathname === "/sign-in" || pathname === "/sign-up") {
-          router.push("/track");
+          router.push("/");
           return;
         }
         
@@ -149,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       description: "You have been signed out.",
     });
     setUser(null);
-    router.push("/sign-in");
+    router.push("/");
   };
 
   const updateLoggedInUser = (updatedUser: ExtendedUser | null) => {
@@ -162,12 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <AuthContext.Provider value={{ user, loading, signOut, updateLoggedInUser, showOnboarding }}>
       {loading ? (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center h-screen">
           <LoadingScreen />
         </div>
       ) : (
         <>
-          {user && !user.is_onboarded && <OnboardingDialog isOpen={true} />}
           {children}
         </>
       )}

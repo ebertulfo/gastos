@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTravelMode } from "@/contexts/TravelModeContext";
+import { useExpenseRefresh } from "@/contexts/ExpenseContext";
 import { ChatState, Message, OnboardingStep } from "./types";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/lib/supabase";
@@ -66,9 +67,10 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
 ];
 
 export function useChat() {
-  const { user } = useAuth();
+  const { user, updateLoggedInUser } = useAuth();
   const { toast } = useToast();
   const { travelMode } = useTravelMode(); // Add travel mode context
+  const { refreshExpenses } = useExpenseRefresh();
   const [state, setState] = useState<ChatState>({
     messages: [],
     isRecording: false,
@@ -428,6 +430,11 @@ export function useChat() {
         action: data.action,
         expense: data.expense,
       });
+
+      // If an expense was created, refresh the expense data
+      if (data.expense) {
+        refreshExpenses();
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
@@ -504,6 +511,11 @@ export function useChat() {
             action: data.action,
             expense: data.expense,
           });
+
+          // If an expense was created, refresh the expense data
+          if (data.expense) {
+            refreshExpenses();
+          }
         } catch (error) {
           console.error("Error processing file:", error);
           
@@ -595,14 +607,18 @@ export function useChat() {
               throw error;
             }
 
+            // Update the AuthContext user state to reflect onboarding completion
+            updateLoggedInUser({
+              ...user,
+              currency: updatedOnboardingData.currency,
+              is_onboarded: true,
+            });
+
             // Add feedback message to chat
             addMessage({
               content: `Thanks ${updatedOnboardingData.name}! Your profile has been set up. You can now start tracking your expenses.`,
               role: "assistant",
             });
-
-            // Remove the additional welcome messages that cause duplication
-            // We'll rely on the initial welcome messages instead
 
             // Save preferences to localStorage as backup
             localStorage.setItem("name", updatedOnboardingData.name || "");
@@ -627,7 +643,7 @@ export function useChat() {
         showOnboarding: isWithinBounds,
       };
     });
-  }, [user, toast, addMessage]);
+  }, [user, updateLoggedInUser, toast, addMessage]);
 
   const toggleRecording = useCallback(() => {
     setState(prev => ({ ...prev, isRecording: !prev.isRecording }));

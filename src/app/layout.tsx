@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TravelModeProvider } from "@/contexts/TravelModeContext";
+import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
@@ -48,14 +49,16 @@ export default function RootLayout({
           <Toaster />
           <AuthProvider>
             <TravelModeProvider>
-              <Suspense fallback={<div className="h-14 border-b"></div>}>
-                <Navbar />
-              </Suspense>
-              <Suspense fallback={<div className="flex justify-center items-center h-[calc(100vh-3.5rem)]">Loading application...</div>}>
-                <main className="w-full mx-auto">
-                  {children}
-                </main>
-              </Suspense>
+              <ExpenseProvider>
+                <Suspense fallback={<div className="h-14 border-b"></div>}>
+                  <Navbar />
+                </Suspense>
+                <Suspense fallback={<div className="flex justify-center items-center h-[calc(100vh-3.5rem)]">Loading application...</div>}>
+                  <main className="w-full mx-auto">
+                    {children}
+                  </main>
+                </Suspense>
+              </ExpenseProvider>
             </TravelModeProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -39,7 +39,9 @@ export class OpenAIExpenseParser implements IExpenseParser {
       {
         role: "system" as const,
         content:
-          "You assist in logging expenses. Extract the amount, category, currency (in ISO 4217 format), and description from the user input. If details are missing, leave them as null.",
+          `You assist in logging expenses. Extract the amount, category, currency (in ISO 4217 format), 
+          and description from the user input. If details are missing, leave them as null. If you can determine
+          the category but not the description, set description to whatever the user said.`,
       },
     ];
 
