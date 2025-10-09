@@ -2,14 +2,13 @@ import {
   collection,
   addDoc,
   getDocs,
-  updateDoc,
   deleteDoc,
   doc,
   query,
   where,
 } from "firebase/firestore";
-import { db } from "./firebase"; // Assuming your Firebase initialization is exported from this file
-import { Expense } from "@/schemas/expense"; // Assuming you have defined the Expense type
+import { db } from "./firebase";
+import { Expense } from "@/schemas/expense";
 import { getAuth } from "firebase/auth";
 
 // Function to add a new expense
@@ -21,10 +20,10 @@ export const addExpense = async (expense: Expense) => {
 
     const docRef = await addDoc(collection(db, "expenses"), {
       ...expense,
-      userId: user.uid, // Make sure to set the userId to the authenticated user's UID
+      userId: user.uid,
       date: expense.date
         ? new Date(expense.date).toISOString()
-        : new Date().toISOString(), // Ensure date is saved in ISO format
+        : new Date().toISOString(),
     });
     return docRef.id;
   } catch (error) {
@@ -46,21 +45,6 @@ export const getUserExpenses = async (userId: string) => {
   } catch (error) {
     console.error("Error retrieving expenses: ", error);
     throw new Error("Unable to retrieve expenses.");
-  }
-};
-
-// Function to update an expense
-export const updateExpense = async (
-  expenseId: string,
-  updatedExpense: Partial<Expense>
-) => {
-  try {
-    const expenseRef = doc(db, "expenses", expenseId);
-    await updateDoc(expenseRef, updatedExpense);
-    return true;
-  } catch (error) {
-    console.error("Error updating expense: ", error);
-    throw new Error("Unable to update expense.");
   }
 };
 

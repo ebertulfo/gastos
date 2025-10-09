@@ -20,7 +20,7 @@ import {
 } from "firebase/auth";
 
 const SignInForm: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"email" | "emailLink" | "phone">(
+  const [activeTab, setActiveTab] = useState<"emailLink" | "phone">(
     "emailLink"
   );
   const { user, updateLoggedInUser } = useAuth();
@@ -37,58 +37,9 @@ const SignInForm: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const telegramUserId = urlParams.get("telegramUserId");
-
-      if (telegramUserId) {
-        // Link Telegram user ID if already logged in
-        linkTelegramAccount(user.uid, telegramUserId);
-      } else {
-        // Redirect logged-in users to the dashboard
-        router.push("/dashboard");
-      }
+      router.push("/expenses");
     }
   }, [user, router]);
-
-  const linkTelegramAccount = async (
-    firebaseUserId: string,
-    telegramUserId: string
-  ) => {
-    try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firebaseUserId,
-          telegramUserId,
-        }),
-      });
-      console.log("@@@@ response", response);
-      if (response.ok) {
-        alert("pasok");
-        toast({
-          title: "Linked Successfully",
-          description: "Your Telegram account has been linked successfully.",
-        });
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to link Telegram account:", errorData.error);
-        toast({
-          title: "Linking Failed",
-          description:
-            "Could not link your Telegram account. Please try again.",
-        });
-      }
-    } catch (error) {
-      console.error("Error linking Telegram account:", error);
-      toast({
-        title: "Linking Error",
-        description: "An error occurred while linking your Telegram account.",
-      });
-    }
-  };
 
   useEffect(() => {
     const auth = getAuth();
@@ -96,12 +47,12 @@ const SignInForm: React.FC = () => {
       completeSignInWithEmailLink(window.location.href)
         .then((user) => {
           if (user) {
-            updateLoggedInUser(user); // Update the context with the signed-in user
+            updateLoggedInUser(user);
             toast({
               title: "Sign-in Successful",
               description: "You are now signed in.",
             });
-            router.push("/dashboard");
+            router.push("/expenses");
           }
         })
         .catch((error) => {
@@ -112,75 +63,7 @@ const SignInForm: React.FC = () => {
           });
         });
     }
-  }, []);
-
-  useEffect(() => {
-    const auth = getAuth();
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      completeSignInWithEmailLink(window.location.href)
-        .then(async (user) => {
-          if (user) {
-            updateLoggedInUser(user); // Update the context with the signed-in user
-
-            // Send a POST request to link the Telegram user ID
-            const telegramUserId = new URLSearchParams(
-              window.location.search
-            ).get("telegramUserId");
-            if (telegramUserId) {
-              try {
-                const response = await fetch("/api/auth", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    idToken: await user.getIdToken(),
-                    firebaseUserId: user.uid,
-                    telegramUserId,
-                  }),
-                });
-
-                if (response.ok) {
-                  toast({
-                    title: "Sign-in Successful",
-                    description:
-                      "You are now signed in and linked to Telegram.",
-                  });
-                } else {
-                  const errorData = await response.json();
-                  console.error("Failed to link Telegram:", errorData.error);
-                  toast({
-                    title: "Warning",
-                    description: "Signed in, but failed to link with Telegram.",
-                  });
-                }
-              } catch (error) {
-                console.error("Error linking Telegram ID:", error);
-                toast({
-                  title: "Warning",
-                  description:
-                    "Signed in, but an error occurred linking with Telegram.",
-                });
-              }
-            } else {
-              toast({
-                title: "Sign-in Successful",
-                description: "You are now signed in.",
-              });
-            }
-
-            router.push("/dashboard");
-          }
-        })
-        .catch((error) => {
-          console.error("Error completing sign-in:", error);
-          toast({
-            title: "Error",
-            description: "Failed to complete sign-in.",
-          });
-        });
-    }
-  }, [router, updateLoggedInUser, toast]);
+  }, [router, toast, updateLoggedInUser]);
 
   useEffect(() => {
     if (resendCooldown && resendCooldown > 0) {
@@ -201,7 +84,7 @@ const SignInForm: React.FC = () => {
       const isOk = await sendSignInLink(email);
       if (isOk) {
         setEmailSent(true);
-        setResendCooldown(30); // Set a cooldown of 30 seconds for resending the link
+        setResendCooldown(30);
         toast({
           title: "Link Sent",
           description:
@@ -232,21 +115,19 @@ const SignInForm: React.FC = () => {
   const sendVerificationCode = async () => {
     try {
       setLoading(true);
-      const auth = getAuth(); // Get the Firebase Auth instance
+      const auth = getAuth();
 
-      // Initialize RecaptchaVerifier with correct parameters
       const appVerifier = new RecaptchaVerifier(
         auth,
-        "recaptcha-container", // Target the reCAPTCHA container
+        "recaptcha-container",
         {
-          size: "invisible", // Use an invisible reCAPTCHA
+          size: "invisible",
           callback: () => {
             // reCAPTCHA solved - proceed with sign-in
           },
         }
       );
 
-      // Sign in using phone number and reCAPTCHA
       const result = await signInWithPhone(phoneNumber, appVerifier);
       if (result) {
         setConfirmationResult(result);
@@ -254,7 +135,6 @@ const SignInForm: React.FC = () => {
           title: "Code Sent",
           description: "Verification code has been sent.",
         });
-        // Set the resend cooldown (e.g., 30 seconds)
         setResendCooldown(30);
       } else {
         toast({
@@ -292,7 +172,7 @@ const SignInForm: React.FC = () => {
             title: "Sign-in Successful",
             description: "You are now signed in.",
           });
-          router.push("/dashboard");
+          router.push("/expenses");
         }
       } catch (error) {
         console.error("Error verifying code:", error);
