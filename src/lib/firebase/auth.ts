@@ -1,7 +1,4 @@
 import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithEmailAndPassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
   getAuth,
@@ -9,41 +6,14 @@ import {
   sendSignInLinkToEmail,
 } from "firebase/auth";
 
-import { APIResponse } from "@/types";
 import { auth } from "./firebase";
-
-// Google Sign-In
-export async function signInWithGoogle() {
-  const provider = new GoogleAuthProvider();
-
-  try {
-    const userCreds = await signInWithPopup(auth, provider);
-    const idToken = await userCreds.user.getIdToken();
-
-    const response = await fetch("/api/auth/sign-in", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ idToken }),
-    });
-    const resBody = (await response.json()) as unknown as APIResponse<string>;
-    if (response.ok && resBody.success) {
-      return true;
-    } else return false;
-  } catch (error) {
-    console.error("Error signing in with Google", error);
-    return false;
-  }
-}
 
 // Function to send a sign-in link to email
 export async function sendSignInLink(email: string) {
   const auth = getAuth();
 
   const actionCodeSettings = {
-    // URL to redirect back to. Can be your app's home page or a specific path.
-    url: "http://localhost:3000/dashboard",
+    url: window.location.origin + "/expenses",
     handleCodeInApp: true,
   };
 
@@ -68,33 +38,10 @@ export async function completeSignInWithEmailLink(url: string) {
   try {
     const result = await signInWithEmailLink(auth, email, url);
     window.localStorage.removeItem("emailForSignIn");
-    return result.user; // Return the user object
+    return result.user;
   } catch (error) {
     console.error("Error completing sign-in with email link", error);
     return null;
-  }
-}
-
-// Email Sign-In
-export async function signInWithEmail(email: string, password: string) {
-  try {
-    const userCreds = await signInWithEmailAndPassword(auth, email, password);
-    const idToken = await userCreds.user.getIdToken();
-
-    const response = await fetch("/api/auth/sign-in", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ idToken }),
-    });
-    const resBody = (await response.json()) as unknown as APIResponse<string>;
-    if (response.ok && resBody.success) {
-      return true;
-    } else return false;
-  } catch (error) {
-    console.error("Error signing in with email and password", error);
-    return false;
   }
 }
 
@@ -103,14 +50,13 @@ export async function signInWithPhone(
   phoneNumber: string,
   appVerifier: RecaptchaVerifier
 ) {
-  console.log("@@@ SOKPA SA OBLO");
   try {
     const confirmationResult = await signInWithPhoneNumber(
       auth,
       phoneNumber,
       appVerifier
     );
-    return confirmationResult; // This returns a confirmationResult that you use to verify the code.
+    return confirmationResult;
   } catch (error) {
     console.error("Error signing in with phone number", error);
     return null;
@@ -121,7 +67,6 @@ export async function signInWithPhone(
 export async function signOut() {
   try {
     await auth.signOut();
-
     return true;
   } catch (error) {
     console.error("Error signing out", error);
