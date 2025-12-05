@@ -1,6 +1,5 @@
 "use client";
 
-import { SupabaseStore } from "@/dataStores/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { AuthChangeEvent } from "@supabase/supabase-js";
@@ -38,11 +37,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Handle authentication setup
   useEffect(() => {
-    const dataStore = new SupabaseStore();
-    
     const fetchUserProfile = async (user_id: string) => {
       try {
-        return await dataStore.getProfile(user_id);
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("id", user_id)
+          .single();
+
+        if (error) {
+          // PGRST116 is "The result contains no rows" error code from PostgREST
+          if (error.code === 'PGRST116') {
+            return null;
+          }
+          console.error("Error fetching user profile:", error);
+          throw new Error(error.message);
+        }
+
+        return data;
       } catch (error) {
         console.error("Error fetching user profile:", error);
         return null;
@@ -112,13 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           router.push("/");
           return;
         }
-        
-        // We're removing the redirect to /onboarding page
-        // and will rely on the chat-based onboarding dialog instead
-        // if (user.is_onboarded === false && pathname !== "/onboarding") {
-        //   router.push("/onboarding");
-        //   return;
-        // }
       } 
       // User is not logged in
       else {

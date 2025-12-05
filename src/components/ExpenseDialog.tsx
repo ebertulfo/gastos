@@ -134,7 +134,7 @@ export function ExpenseDialog({
       if (!expense.description || !expense.amount || !expense.category) {
         toast({
           title: "Missing information",
-          description: "Please fill in all required fields",
+          description: "Please fill in all required fields.",
           variant: "destructive",
         });
         return;
@@ -186,10 +186,10 @@ export function ExpenseDialog({
       await onSave(formattedExpense);
       
       toast({
-        title: mode === 'edit' ? "Expense updated" : "Expense added",
+        title: mode === 'edit' ? "Updated" : "Logged",
         description: mode === 'edit' 
-          ? "Your expense has been updated successfully" 
-          : "Your expense has been added successfully",
+          ? "Your expense has been updated." 
+          : "Your expense has been saved.",
       });
 
       if (onSuccess) {
@@ -200,8 +200,8 @@ export function ExpenseDialog({
     } catch (error) {
       console.error("Error saving expense:", error);
       toast({
-        title: "Error",
-        description: "Failed to save expense. Please try again.",
+        title: "Something went wrong",
+        description: "Couldn't save the expense. Try again in a moment.",
         variant: "destructive",
       });
     } finally {
@@ -218,8 +218,8 @@ export function ExpenseDialog({
       await onDelete(expense.id);
       
       toast({
-        title: "Expense deleted",
-        description: "Your expense has been deleted successfully",
+        title: "Deleted",
+        description: "Your expense has been removed.",
       });
       
       if (onSuccess) {
@@ -232,8 +232,8 @@ export function ExpenseDialog({
     } catch (error) {
       console.error("Error deleting expense:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete expense. Please try again.",
+        title: "Something went wrong",
+        description: "Couldn't remove the expense. Try again in a moment.",
         variant: "destructive",
       });
     } finally {

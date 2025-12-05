@@ -51,14 +51,14 @@ export function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItemProps) {
       onUpdate(result);
       setIsEditOpen(false);
       toast({
-        title: 'Success',
-        description: 'Expense updated successfully',
+        title: 'Updated',
+        description: 'Your expense has been updated.',
       });
     } catch (error) {
       console.error('Error updating expense:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update expense',
+        title: 'Something went wrong',
+        description: "Couldn't update the expense. Try again in a moment.",
         variant: 'destructive',
       });
     }
@@ -74,14 +74,14 @@ export function ExpenseItem({ expense, onUpdate, onDelete }: ExpenseItemProps) {
       onDelete(expense.id!);
       setIsDeleteDialogOpen(false);
       toast({
-        title: 'Success',
-        description: 'Expense deleted successfully',
+        title: 'Deleted',
+        description: 'Your expense has been removed.',
       });
     } catch (error) {
       console.error('Error deleting expense:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete expense',
+        title: 'Something went wrong',
+        description: "Couldn't remove the expense. Try again in a moment.",
         variant: 'destructive',
       });
     }

@@ -1,11 +1,10 @@
-import { IExpenseParser } from "@/interfaces/IExpenseParser";
 import { z } from "zod";
 import { ParsedExpense } from "@/schemas/expense";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 
-export class OpenAIExpenseParser implements IExpenseParser {
+export class OpenAIExpenseParser {
   constructor(private openai: OpenAI) {}
 
   private async getBase64Image(image: File | Buffer | string): Promise<string> {

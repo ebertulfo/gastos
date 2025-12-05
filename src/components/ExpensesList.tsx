@@ -30,14 +30,14 @@ export function ExpensesList({
       await onCreateExpense(expenseData);
       setIsAddExpenseOpen(false);
       toast({
-        title: 'Success',
-        description: 'Expense added successfully',
+        title: 'Logged',
+        description: 'Your expense has been saved.',
       });
     } catch (error) {
       console.error('Error adding expense:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to add expense',
+        title: 'Something went wrong',
+        description: "Couldn't log the expense. Try again in a moment.",
         variant: 'destructive',
       });
     }
@@ -60,7 +60,7 @@ export function ExpensesList({
       
       {expenses.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          No expenses found for this period.
+          No expenses yet. Log your first one to see your spending here.
         </div>
       ) : (
         <div className="space-y-2">

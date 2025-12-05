@@ -65,14 +65,14 @@ export function MessageItem({
       }
       
       toast({
-        title: "Expense updated",
-        description: "Your expense has been updated successfully",
+        title: "Updated",
+        description: "Your expense has been updated.",
       });
     } catch (error) {
       console.error("Error updating expense:", error);
       toast({
-        title: "Error",
-        description: "Failed to update expense. Please try again.",
+        title: "Something went wrong",
+        description: "Couldn't update the expense. Try again in a moment.",
         variant: "destructive",
       });
     }
@@ -115,14 +115,14 @@ export function MessageItem({
       }
       
       toast({
-        title: "Expense deleted",
-        description: "Your expense has been deleted successfully",
+        title: "Deleted",
+        description: "Your expense has been removed.",
       });
     } catch (error) {
       console.error("Error deleting expense:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete expense. Please try again.",
+        title: "Something went wrong",
+        description: "Couldn't remove the expense. Try again in a moment.",
         variant: "destructive",
       });
     }
@@ -139,19 +139,19 @@ export function MessageItem({
           <Icon className="w-5 h-5 text-primary" />
         </div>
         
-        <Card className={`p-5 relative ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"} ${message.action === "onboarding" ? "cursor-pointer hover:bg-accent transition-colors" : ""} shadow-sm`}
+        <Card className={`p-5 relative ${isUser ? "bg-primary text-primary-foreground" : "bg-muted"} ${message.action === "onboarding" ? "cursor-pointer hover:bg-muted/80 transition-colors" : ""} shadow-sm`}
           onClick={message.action === "onboarding" ? props.onClick : undefined}>
-          {/* Delete button - only show on hover */}
+          {/* Delete button - only show on hover, positioned outside content flow */}
           {onDelete && (
             <button 
               onClick={(e) => {
                 e.stopPropagation(); // Prevent triggering card onClick
                 onDelete();
               }}
-              className="absolute top-0 right-0 p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-500 transition-opacity" // Adjusted position
+              className="absolute -top-2 -right-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 bg-muted text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-border transition-all shadow-sm"
               title="Delete message"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
           

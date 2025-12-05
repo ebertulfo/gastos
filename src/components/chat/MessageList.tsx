@@ -274,7 +274,7 @@ export function MessageList({
       {hasMoreMessages && !isLoadingMore && (
         <button
           onClick={() => loadMoreMessages()}
-          className="w-full text-center py-3 mb-2 text-sm text-blue-500 hover:text-blue-700"
+          className="w-full text-center py-3 mb-2 text-sm text-primary hover:text-primary/80"
         >
           Load older messages
         </button>

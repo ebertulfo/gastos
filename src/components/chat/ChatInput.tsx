@@ -53,7 +53,7 @@ export function ChatInput({
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
+          placeholder="e.g. 5 SGD for lunch"
           disabled={isProcessing}
           className="flex-1 min-h-[60px] resize-none py-3 px-4 rounded-lg w-full"
           onKeyDown={(e) => {

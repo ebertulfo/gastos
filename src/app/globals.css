@@ -2,58 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220.9 39.3% 11%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 224 71.4% 4.1%;
+    /* Light theme (secondary) - per color-palette.md */
+    --background: 249 250 251;
+    --foreground: 2 6 23;
+
+    --card: 255 255 255;
+    --card-foreground: 2 6 23;
+
+    --popover: 255 255 255;
+    --popover-foreground: 2 6 23;
+
+    --primary: 5 150 105;
+    --primary-foreground: 236 253 245;
+
+    --secondary: 229 231 235;
+    --secondary-foreground: 17 24 39;
+
+    --muted: 229 231 235;
+    --muted-foreground: 107 114 128;
+
+    --accent: 16 185 129;
+    --accent-foreground: 2 44 34;
+
+    --destructive: 220 38 38;
+    --destructive-foreground: 254 242 242;
+
+    --border: 209 213 219;
+    --input: 255 255 255;
+    --ring: 5 150 105;
+
+    /* Custom tokens */
+    --subtle-bg: 255 255 255;
+    --elevated-bg: 255 255 255;
+    --success: 22 163 74;
+    --warning: 217 119 6;
+    --info: 2 132 199;
+
+    /* Chart colors */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    
     --radius: 0.5rem;
   }
+
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 210 20% 98%;
-    --primary-foreground: 220.9 39.3% 11%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 216 12.2% 83.9%;
+    /* Dark theme (primary) - per color-palette.md */
+    --background: 5 5 9;
+    --foreground: 249 250 251;
+
+    --card: 5 5 9;
+    --card-foreground: 249 250 251;
+
+    --popover: 15 16 24;
+    --popover-foreground: 249 250 251;
+
+    --primary: 16 185 129;
+    --primary-foreground: 2 44 34;
+
+    --secondary: 17 24 39;
+    --secondary-foreground: 229 231 235;
+
+    --muted: 17 24 39;
+    --muted-foreground: 156 163 175;
+
+    --accent: 52 211 153;
+    --accent-foreground: 2 44 34;
+
+    --destructive: 239 68 68;
+    --destructive-foreground: 254 242 242;
+
+    --border: 31 41 51;
+    --input: 17 24 39;
+    --ring: 16 185 129;
+
+    /* Custom tokens */
+    --subtle-bg: 9 9 18;
+    --elevated-bg: 15 16 24;
+    --success: 34 197 94;
+    --warning: 251 191 36;
+    --info: 56 189 248;
+
+    /* Chart colors */
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -68,5 +102,6 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-inter), system-ui, sans-serif;
   }
 }

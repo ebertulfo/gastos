@@ -1,6 +1,6 @@
 -- Add pending_expense_drafts table for multi-turn conversation
 CREATE TABLE IF NOT EXISTS public.pending_expense_drafts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   description TEXT,
   amount NUMERIC,

@@ -5,9 +5,17 @@ import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import Navbar from "./components/NavBar";
 import "./globals.css";
+
+// Load Inter font (brand primary font)
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 // Load fonts
 const geistSans = localFont({
@@ -38,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <ThemeProvider
           attribute="class"

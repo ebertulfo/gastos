@@ -1,8 +1,7 @@
-import { IExpenseService } from "@/interfaces/IExpenseService";
 import { Expense, ExpenseCategory } from "@/schemas/expense";
 import { createClient } from "@supabase/supabase-js";
 
-export class SupabaseExpenseService implements IExpenseService {
+export class SupabaseExpenseService {
   private supabase;
 
   constructor(authToken?: string) {

@@ -11,19 +11,15 @@ import { ChatMessageService } from "@/services/ChatMessageService";
 // Welcome messages for non-logged in users
 const GUEST_WELCOME_MESSAGES: Omit<Message, "id" | "timestamp">[] = [
   {
-    content: "👋 Welcome to Gastos - Track Your Spending, Effortlessly!",
+    content: "👋 Welcome to Gastos!",
     role: "assistant",
   },
   {
-    content: "Simple, intuitive expense tracking with powerful insights. Keep your finances in check from anywhere, anytime.",
+    content: "Track your spending effortlessly. Just type what you spent, like \"5 SGD for lunch\" and we'll handle the rest.",
     role: "assistant",
   },
   {
-    content: "With Gastos, you can:\n• See where your money goes with intuitive charts\n• Log expenses with our conversational AI assistant\n• Track in multiple currencies\n• Automatically categorize your spending\n• Access from any device",
-    role: "assistant",
-  },
-  {
-    content: "Login or sign up to get started tracking your expenses today!",
+    content: "Sign in to get started.",
     role: "assistant",
     action: "onboarding",
   }
@@ -32,17 +28,13 @@ const GUEST_WELCOME_MESSAGES: Omit<Message, "id" | "timestamp">[] = [
 // Welcome messages for logged-in users with no chat history
 const LOGGED_IN_WELCOME_MESSAGES: Omit<Message, "id" | "timestamp">[] = [
   {
-    content: "👋 Welcome to Gastos! Let's start tracking your expenses.",
+    content: "👋 Welcome to Gastos!",
     role: "assistant",
   },
   {
-    content: "You can:\n• Add a new expense by typing something like \"I spent $25 on lunch today\"\n• Upload a receipt photo to automatically log an expense\n• Ask to see a summary of your spending",
+    content: "Just type what you spent, like \"25 for lunch\" or \"taxi 15 SGD\". I'll log it for you.",
     role: "assistant",
   },
-  {
-    content: "What would you like to track today?",
-    role: "assistant",
-  }
 ];
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -208,8 +200,8 @@ export function useChat() {
           console.error("Error loading messages:", error);
           if (isMounted) {
             toast({
-              title: "Error",
-              description: "Failed to load chat history. Please try refreshing the page.",
+              title: "Something went wrong",
+              description: "Couldn't load your messages. Try refreshing the page.",
               variant: "destructive",
             });
           }
@@ -271,8 +263,8 @@ export function useChat() {
     } catch (error) {
       console.error("Error loading more messages:", error);
       toast({
-        title: "Error",
-        description: "Failed to load more messages.",
+        title: "Something went wrong",
+        description: "Couldn't load older messages. Try again in a moment.",
         variant: "destructive",
       });
     } finally {
@@ -341,8 +333,8 @@ export function useChat() {
     } catch (error) {
       console.error("Error saving message:", error);
       toast({
-        title: "Error",
-        description: "Failed to save message. Your changes may not be persisted.",
+        title: "Something went wrong",
+        description: "Couldn't save your message. Your changes may not be saved.",
         variant: "destructive",
       });
     }
@@ -438,8 +430,8 @@ export function useChat() {
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message. Please try again.",
+        title: "Something went wrong",
+        description: error instanceof Error ? error.message : "Couldn't send your message. Try again in a moment.",
         variant: "destructive",
       });
     } finally {
@@ -450,8 +442,8 @@ export function useChat() {
   const handleFileUpload = useCallback(async (file: File) => {
     if (!user) {
       toast({
-        title: "Error",
-        description: "Please log in to upload files.",
+        title: "Sign in required",
+        description: "Please sign in to upload files.",
         variant: "destructive",
       });
       setShowLoginDialog(true);
@@ -628,8 +620,8 @@ export function useChat() {
           } catch (error) {
             console.error("Error updating profile:", error);
             toast({
-              title: "Error",
-              description: "Failed to save your profile information. Please try again.",
+              title: "Something went wrong",
+              description: "Couldn't save your profile. Try again in a moment.",
               variant: "destructive",
             });
           }
@@ -681,14 +673,14 @@ export function useChat() {
       totalMessageCountRef.current -= 1;
 
       toast({
-        title: "Message deleted",
-        description: "Message has been removed from your chat history.",
+        title: "Deleted",
+        description: "Message has been removed.",
       });
     } catch (error) {
       console.error("Error deleting message:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete message. Please try again.",
+        title: "Something went wrong",
+        description: "Couldn't delete the message. Try again in a moment.",
         variant: "destructive",
       });
     }

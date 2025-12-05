@@ -85,14 +85,14 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
       if (error) {
         toast({
-          title: "Error",
+          title: "Something went wrong",
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "OTP Sent",
-          description: "Please check your email for the verification code.",
+          title: "Code sent",
+          description: "Check your email for the verification code.",
         });
         setEmailSubmitted(true);
         startCooldown();
@@ -100,8 +100,8 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
     } catch (error) {
       console.error("Error sending OTP:", error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
+        title: "Something went wrong",
+        description: "Couldn't send the code. Try again in a moment.",
         variant: "destructive",
       });
     } finally {
@@ -122,14 +122,14 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
       if (error) {
         toast({
-          title: "Verification Failed",
+          title: "Couldn't verify",
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Success",
-          description: "You are now signed in!",
+          title: "Signed in",
+          description: "Welcome to Gastos!",
         });
         // Close the dialog after successful login
         onClose();
@@ -137,8 +137,8 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
     } catch (error) {
       console.error("Error verifying OTP:", error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
+        title: "Something went wrong",
+        description: "Couldn't verify the code. Try again in a moment.",
         variant: "destructive",
       });
     } finally {
@@ -164,22 +164,22 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
       if (error) {
         toast({
-          title: "Error",
+          title: "Something went wrong",
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "OTP Resent",
-          description: "Please check your email for the new verification code.",
+          title: "Code resent",
+          description: "Check your email for the new code.",
         });
         startCooldown();
       }
     } catch (error) {
       console.error("Error resending OTP:", error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
+        title: "Something went wrong",
+        description: "Couldn't resend the code. Try again in a moment.",
         variant: "destructive",
       });
     } finally {

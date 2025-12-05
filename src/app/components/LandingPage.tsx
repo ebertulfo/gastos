@@ -33,16 +33,7 @@ export default function LandingPage() {
             </div>
             <div className="mx-auto lg:mx-0 lg:flex-1">
               <div className="aspect-video overflow-hidden rounded-xl">
-                {/* <Image
-                  src="/dashboard-preview.png"
-                  alt="Dashboard preview"
-                  width={1200}
-                  height={720}
-                  className="object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = "/file.svg";
-                  }}
-                /> */}
+                {/* Placeholder for dashboard preview image */}
               </div>
             </div>
           </div>
@@ -139,7 +130,7 @@ export default function LandingPage() {
         <div className="container flex flex-col gap-4 py-10 md:h-24 md:flex-row md:py-0">
           <div className="flex flex-col gap-4 md:flex-row md:gap-6 md:items-center">
             <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-              © {new Date().getFullYear()} Spending Tracker. All rights reserved.
+              © {new Date().getFullYear()} Gastos. All rights reserved.
             </p>
           </div>
           <nav className="md:ml-auto flex items-center justify-center gap-4 md:gap-6">

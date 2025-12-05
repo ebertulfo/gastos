@@ -34,7 +34,7 @@ create policy "Users can update their own profile"
 
 -- Expenses Table
 create table if not exists public.expenses (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid references auth.users(id),
   amount numeric not null,
   description text,
