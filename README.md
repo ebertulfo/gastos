@@ -20,6 +20,13 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+
+## Agent Workflow (Codex)
+
+- Repository-level Codex operating rules live in `AGENTS.md`.
+- For non-trivial tasks, keep an actionable checklist in `tasks/todo.md`.
+- Capture durable corrections and prevention rules in `tasks/lessons.md`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
